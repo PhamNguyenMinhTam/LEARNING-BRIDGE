@@ -2,7 +2,7 @@
 
 **Learning Bridge** là dự án phát triển ứng dụng web hỗ trợ giáo viên, học sinh và nhà trường trong việc tìm kiếm, chia sẻ, quản lý và tiếp cận các tài nguyên học tập.
 
-Dự án được xây dựng trong khuôn khổ đồ án cuối kỳ môn **Web Programming**, hướng đến giải quyết bài toán thiếu sách giáo khoa và tài liệu học tập thông qua một nền tảng trực tuyến đơn giản, dễ sử dụng và phù hợp với điều kiện thực tế.
+Dự án được xây dựng trong khuôn khổ giải quyết bài toán thiếu sách giáo khoa và tài liệu học tập thông qua một nền tảng trực tuyến đơn giản, dễ sử dụng và phù hợp với điều kiện thực tế.
 
 Thay vì xây dựng một hệ thống thay thế hoàn toàn sách giáo khoa hoặc các nền tảng giáo dục hiện có, Learning Bridge tập trung phát triển một **giải pháp hỗ trợ mang tính tạm thời**, giúp học sinh duy trì việc học trong những giai đoạn chưa có đủ tài liệu cần thiết.
 
