@@ -1,0 +1,100 @@
+﻿<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Khám phá sách, bài giảng và tài liệu học tập với Learning Bridge.">
+  <title>Learning Bridge | Explore Learning Resources</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="data/resources.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body id="home">
+  <a class="skip" href="#explore">Đến danh mục tài liệu</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">LB</span> Learning Bridge</a>
+      <button id="menu-toggle" class="secondary" type="button" aria-controls="navigation" aria-expanded="false">Menu</button>
+      <nav id="navigation" aria-label="Điều hướng chính">
+        <a href="#home">Trang chủ</a><a href="#explore">Khám phá tài liệu</a><a href="#about">Giới thiệu</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero-inner">
+        <div>
+          <h1 id="hero-title">Khám phá tri thức<br><em>không giới hạn</em></h1>
+          <p>Tìm sách giáo khoa, bài giảng, bài báo nghiên cứu và tài liệu học tập từ nhiều lĩnh vực tại một nơi.</p>
+          <form id="search-form" role="search">
+            <span class="icon search-icon" data-icon="search" aria-hidden="true"></span>
+            <label class="sr-only" for="query">Từ khóa tìm kiếm</label>
+            <input type="search" id="query" placeholder="Tìm tên sách, tài liệu, chủ đề, tác giả, từ khóa...">
+            <button type="button" id="clear-query" class="clear-query" aria-label="Xóa từ khóa" hidden>×</button>
+            <button type="submit" class="primary">Tìm kiếm</button>
+          </form>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit"></div>
+          <div class="book-stack"><span></span><span></span><span></span></div>
+          <div class="art-card"><span class="icon" data-icon="book"></span></div>
+          <div class="art-spark">✦</div>
+        </div>
+      </div>
+    </section>
+    <section class="wrap categories" aria-labelledby="category-title">
+      <h2 id="category-title">Khám phá theo bậc học</h2>
+      <div id="categories" class="category-grid"></div>
+    </section>
+    <section id="explore" class="wrap catalog" aria-labelledby="results-title">
+      <div class="catalog-heading">
+        <div><h2 id="results-title" tabindex="-1">Thư viện tài liệu</h2><p>Duyệt danh mục tài liệu minh họa.</p></div>
+        <button type="button" id="open-filters" class="secondary" aria-haspopup="dialog">Bộ lọc</button>
+      </div>
+      <div class="catalog-layout">
+        <aside id="filter-sidebar" aria-label="Bộ lọc tài liệu">
+          <form id="filter-form">
+            <div class="filter-heading"><h3>Bộ lọc</h3><button type="button" class="text-button" id="clear-filters">Xóa tất cả</button></div>
+            <div id="filter-fields"></div>
+            <div class="filter-dialog-actions">
+              <button type="button" class="secondary" id="close-filters">Đóng</button>
+              <button type="submit" class="primary">Áp dụng</button>
+            </div>
+          </form>
+        </aside>
+        <div class="results">
+          <div class="results-toolbar">
+            <p id="result-count" role="status"></p>
+            <div class="sorting">
+              <label for="sort">Sắp xếp</label>
+              <select id="sort">
+                <option value="relevance">Độ liên quan</option>
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+                <option value="title">Tiêu đề A–Z</option>
+              </select>
+            </div>
+          </div>
+          <div id="active-filters" class="chips" aria-label="Điều kiện đang áp dụng"></div>
+          <div id="resources" class="resource-grid"></div>
+          <nav id="pagination" aria-label="Phân trang"></nav>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="about">
+    <div class="wrap footer-inner">
+      <a class="brand" href="#home"><span class="brand-mark" aria-hidden="true">LB</span> Learning Bridge</a>
+      <p>Thư viện giúp người học tìm tài liệu công khai, tôn trọng quyền sở hữu trí tuệ và hỗ trợ nhu cầu học tập trước mắt.</p>
+    </div>
+  </footer>
+  <dialog id="filter-dialog" aria-label="Bộ lọc tài liệu"></dialog>
+  <dialog id="resource-dialog" aria-labelledby="detail-title">
+    <div class="detail-inner">
+      <form method="dialog"><button class="secondary close-detail" aria-label="Đóng chi tiết" autofocus>×</button></form>
+      <div id="detail-content"></div>
+    </div>
+  </dialog>
+  <noscript><p class="wrap">Vui lòng bật JavaScript để tìm kiếm, lọc và xem chi tiết tài liệu.</p></noscript>
+</body>
+</html>
