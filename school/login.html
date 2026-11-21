@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning Bridge | School Login</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="login.css">
+  <script src="login.js" defer></script>
+</head>
+<body class="login-page">
+  <main class="login-layout">
+    <aside class="login-brand" aria-label="Giới thiệu">
+      <p class="brand"><span class="brand-mark" aria-hidden="true">LB</span> Learning Bridge</p>
+      <div>
+        <p class="brand-title">School Review<br>Portal</p>
+        <p>Nền tảng kiểm duyệt và xác nhận tài nguyên học tập dành cho nhà trường.</p>
+      </div>
+    </aside>
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-card">
+        <span class="demo">Frontend Demo</span>
+        <h1 id="login-title">Đăng nhập dành cho nhà trường</h1>
+        <p class="muted">Tài khoản được cấp bởi bộ phận quản lý giáo dục.</p>
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="account">Tên tài khoản trường</label>
+            <input id="account" required autocomplete="off" aria-describedby="account-error">
+            <p id="account-error" class="error" aria-live="polite"></p>
+          </div>
+          <div class="field">
+            <label for="password">Mật khẩu</label>
+            <div class="password-wrap">
+              <input type="password" id="password" required autocomplete="off" aria-describedby="password-error">
+              <button type="button" id="toggle-password" class="button" aria-controls="password">Hiện mật khẩu</button>
+            </div>
+            <p id="password-error" class="error" aria-live="polite"></p>
+          </div>
+          <button class="button primary" id="login-button" type="submit">Đăng nhập</button>
+          <p id="login-status" class="notice" role="status"></p>
+        </form>
+        <a class="demo-link" href="index.html">Xem giao diện Dashboard (Demo)</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning Bridge | School Review Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="data/resources.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Đến nội dung chính</a>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">LB</span> Learning Bridge</a>
+      <nav aria-label="Điều hướng kiểm duyệt">
+        <a href="#overview" aria-current="location">Tổng quan</a>
+        <a href="#queue">Tài liệu chờ duyệt</a>
+        <a href="#history">Lịch sử kiểm duyệt</a>
+      </nav>
+      <a class="back" href="login.html">Về trang đăng nhập</a>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <strong>School Review Portal</strong>
+        <div class="profile">
+          <span class="demo">Frontend Demo</span>
+          <span class="avatar" role="img" aria-label="Quản trị viên">DS</span>
+          <span>Demo School</span>
+        </div>
+      </header>
+      <main id="main" tabindex="-1">
+        <section id="overview" aria-labelledby="overview-title">
+          <div class="overview-heading">
+            <h1 id="overview-title">Tổng quan kiểm duyệt</h1>
+            <p class="muted">Xem và kiểm duyệt tài liệu do giáo viên của trường gửi lên.</p>
+          </div>
+          <div class="summary">
+            <article class="metric"><span class="metric-icon pending" aria-hidden="true">◷</span><strong id="pending-count">0</strong><h2>Chờ duyệt</h2></article>
+            <article class="metric"><span class="metric-icon approved" aria-hidden="true">✓</span><strong id="approved-count">0</strong><h2>Đã chấp thuận</h2></article>
+            <article class="metric"><span class="metric-icon rejected" aria-hidden="true">×</span><strong id="rejected-count">0</strong><h2>Đã từ chối</h2></article>
+          </div>
+          <p id="review-status" class="notice" role="status"></p>
+        </section>
+
+        <section id="queue" class="panel" aria-labelledby="queue-title">
+          <div class="section-heading">
+            <h2 id="queue-title">Danh sách tài liệu</h2>
+            <p class="muted" id="result-count" aria-live="polite"></p>
+          </div>
+          <form id="filters" class="filters" role="search" aria-label="Tìm và lọc tài liệu">
+            <div class="field"><label for="search">Tìm kiếm</label><input type="search" id="search" placeholder="Tên tài liệu, giáo viên, môn học"></div>
+            <div class="field"><label for="type-filter">Loại tài liệu</label><select id="type-filter"><option value="">Tất cả loại</option></select></div>
+            <div class="field"><label for="status-filter">Trạng thái</label><select id="status-filter">
+              <option value="pending" selected>Chờ duyệt</option><option value="">Tất cả trạng thái</option><option value="approved">Đã chấp thuận</option><option value="rejected">Đã từ chối</option>
+            </select></div>
+            <div class="field"><label for="sort">Sắp xếp</label><select id="sort">
+              <option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option><option value="title">Tên A–Z</option>
+            </select></div>
+          </form>
+          <table id="resource-table">
+            <caption class="sr-only">Danh sách tài liệu gửi kiểm duyệt</caption>
+            <thead><tr><th scope="col">Tài liệu</th><th scope="col">Môn học</th><th scope="col">Loại</th><th scope="col">Ngày gửi</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+            <tbody id="resources"></tbody>
+          </table>
+          <div id="empty" class="empty" hidden><p>Không tìm thấy tài liệu.</p><button type="button" class="button" id="clear-filters">Xóa bộ lọc</button></div>
+        </section>
+
+        <section id="history" class="panel" aria-labelledby="history-title">
+          <div class="section-heading">
+            <h2 id="history-title">Lịch sử kiểm duyệt</h2>
+            <div class="field"><label for="history-filter">Quyết định</label><select id="history-filter">
+              <option value="">Tất cả quyết định</option><option value="approved">Đã chấp thuận</option><option value="rejected">Đã từ chối</option>
+            </select></div>
+          </div>
+          <ul id="history-list" class="history-list"></ul>
+          <p id="history-empty" class="empty" hidden>Không có quyết định phù hợp.</p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="review-dialog" aria-labelledby="detail-title">
+    <header class="dialog-header">
+      <h2 id="detail-title" tabindex="-1"></h2>
+      <button type="button" id="close-review" class="button icon-button" aria-label="Đóng chi tiết">×</button>
+    </header>
+    <div class="dialog-content">
+      <section aria-labelledby="information-title">
+        <h3 id="information-title">Thông tin tài liệu</h3>
+        <dl id="metadata"></dl>
+        <div class="preview"><h3>Bản xem trước</h3><p>Chưa có bản xem trước tài liệu.</p></div>
+      </section>
+      <section class="decision" aria-labelledby="decision-title">
+        <h3 id="decision-title">Quyết định kiểm duyệt</h3>
+        <p id="detail-status"></p>
+        <p class="notice" id="demo-notice">Quyết định chỉ được mô phỏng trên giao diện, chưa được lưu vào hệ thống.</p>
+        <div id="decision-fields">
+          <div class="field">
+            <label for="review-note">Ghi chú kiểm duyệt</label>
+            <textarea id="review-note" rows="5" placeholder="Nhập nhận xét hoặc lý do từ chối để giáo viên biết..." aria-describedby="note-help note-error"></textarea>
+            <p class="muted" id="note-help">Bắt buộc nhập lý do khi từ chối.</p>
+            <p class="error" id="note-error" aria-live="polite"></p>
+          </div>
+          <div class="actions">
+            <button type="button" class="button primary" id="approve">Chấp thuận</button>
+            <button type="button" class="button danger" id="reject">Từ chối</button>
+          </div>
+        </div>
+        <div id="past-decision" hidden></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <form method="dialog" class="confirm-form">
+      <h2 id="confirm-title">Xác nhận quyết định demo</h2>
+      <p id="confirm-message"></p>
+      <div class="actions">
+        <button class="button" value="cancel">Quay lại</button>
+        <button class="button primary" value="confirm" id="confirm-action">Xác nhận</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>
