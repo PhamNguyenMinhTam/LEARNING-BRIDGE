@@ -9,7 +9,8 @@ CREATE TABLE schools (
     PRIMARY KEY (id),
     UNIQUE KEY uq_schools_code (school_code),
     CONSTRAINT chk_schools_metadata CHECK (
-        REGEXP_LIKE(school_code, '^[^[:space:]]+$')
+        CHAR_LENGTH(school_code) > 0
+        AND NOT REGEXP_LIKE(school_code, '[[:space:]]')
         AND REGEXP_LIKE(school_name, '[^[:space:]]')
         AND REGEXP_LIKE(teacher_id_pattern, '[^[:space:]]')
     )

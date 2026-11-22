@@ -39,6 +39,10 @@ DELIMITER ;
 
 CALL lb_test_expect_error('Duplicate school code (case-insensitive)', 1062,
     'INSERT INTO schools (school_code, school_name, teacher_id_pattern) VALUES (''lb-mg01'', ''Duplicate'', ''^1$'')');
+CALL lb_test_expect_error('Empty school code', 3819,
+    'INSERT INTO schools (school_code, school_name, teacher_id_pattern) VALUES ('''', ''Test'', ''^1$'')');
+CALL lb_test_expect_error('School code with a trailing newline', 3819,
+    'INSERT INTO schools (school_code, school_name, teacher_id_pattern) VALUES (CONCAT(''LB-TEST'', CHAR(10)), ''Test'', ''^1$'')');
 CALL lb_test_expect_error('Duplicate teacher-school pair', 1062,
     'INSERT INTO teacher_schools (teacher_id, school_id, teacher_code) VALUES (4, 1, ''26560053'')');
 CALL lb_test_expect_error('Duplicate email', 1062,
