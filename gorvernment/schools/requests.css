@@ -1,0 +1,10 @@
+@media (min-width: 560px) {
+  .school-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .school-form > :first-child,
+  .school-form > .actions {
+    grid-column: 1 / -1;
+  }
+}
