@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'; object-src 'none'">
+  <title>Learning Bridge | Quản lý giáo dục</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><span aria-hidden="true">LB</span><div>Learning Bridge<small>Quản lý giáo dục</small></div></div>
+      <button type="button" id="menu" aria-expanded="false" aria-controls="navigation">Menu điều hướng</button>
+      <nav id="navigation" aria-label="Quản lý giáo dục">
+        <a href="#overview">Tổng quan</a>
+        <a href="#schools">Quản lý trường</a>
+        <a href="#rules">Quy tắc mã giáo viên</a>
+        <a href="#accounts">Tài khoản School</a>
+        <a href="#reviews">Kiểm duyệt tài liệu độc lập</a>
+        <a class="login-link" href="auth/login.html">Về màn hình đăng nhập</a>
+      </nav>
+    </aside>
+    <main id="main">
+      <header class="topbar">
+        <span>Quản lý giáo dục</span>
+        <span class="demo">Frontend Demo</span>
+      </header>
+      <div class="workspace">
+        <h1 id="title" tabindex="-1"></h1>
+        <p id="intro" class="muted"></p>
+        <p id="feedback" role="status" aria-live="polite"></p>
+        <div id="content"></div>
+      </div>
+    </main>
+  </div>
+  <dialog id="details" aria-labelledby="dialog-title"></dialog>
+  <dialog id="confirmation" aria-labelledby="confirmation-title"></dialog>
+</body>
+</html>
