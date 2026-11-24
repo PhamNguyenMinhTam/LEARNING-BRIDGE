@@ -32,4 +32,10 @@ class CommitOutcomeUnknown extends Error {
   }
 }
 
-module.exports = { one, withTransaction, CommitOutcomeUnknown };
+function isDatabaseUnavailable(error) {
+  return ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN',
+    'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_SERVER_SHUTDOWN'].includes(error?.code) ||
+    error?.message === 'No connections available.';
+}
+
+module.exports = { one, withTransaction, CommitOutcomeUnknown, isDatabaseUnavailable };

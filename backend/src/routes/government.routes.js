@@ -1,3 +1,5 @@
+const { reviewRoutes } = require('./review.routes');
+const { createReviewController } = require('../controllers/review.controller');
 const { json } = require('express');
 const { createSessionMiddleware } = require('../config/session');
 const { createGovernmentController } = require('../controllers/government.controller');
@@ -5,13 +7,17 @@ const { requireTrustedOrigin } = require('../middlewares/auth-origin');
 const { requireAuth, requireRole } = require('../middlewares/authorization');
 const { createSessionRouter, accountRateLimit } = require('../middlewares/session-api');
 
-function governmentRoutes({ origins, auth, ...sessionConfig }, service) {
+function governmentRoutes({ origins, auth, ...sessionConfig }, service, reviews) {
   const router = createSessionRouter({ origins, secure: sessionConfig.secure }, ['GET', 'HEAD', 'POST', 'PATCH']);
   const session = createSessionMiddleware(sessionConfig);
   const controller = createGovernmentController(service);
   const parseJson = json({ limit: '32kb' });
 
   router.use(session.load, requireAuth(auth, session.clear), requireRole('government'), requireTrustedOrigin(origins));
+  if (reviews) {
+    router.use('/reviews', reviewRoutes(reviews));
+    router.post('/resources/:id/withdraw', parseJson, createReviewController(reviews).withdraw);
+  }
   router.get('/schools', controller.listSchools);
   router.get('/schools/:id', controller.getSchool);
   router.post('/schools', parseJson, controller.createSchool);

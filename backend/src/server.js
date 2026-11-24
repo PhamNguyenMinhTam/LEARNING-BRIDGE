@@ -1,3 +1,5 @@
+const { createReviewRepository } = require('./repositories/review.repository');
+const { createReviewService } = require('./services/review.service');
 const { createTeacherSchoolRepository } = require('./repositories/teacher-school.repository');
 const { createResourceRepository } = require('./repositories/resource.repository');
 const { createTeacherSchoolService } = require('./services/teacher-school.service');
@@ -33,6 +35,7 @@ function start() {
     ...config,
     checkDatabase: createDatabaseCheck(pool),
     government: createGovernmentService(createGovernmentRepository(pool)),
+    reviews: createReviewService(pool, createReviewRepository(pool), storage),
     teacher: {
       schools,
       resources: createResourceService(pool, resourceRepository, schools, associationRepository, storage),

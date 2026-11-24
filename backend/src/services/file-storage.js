@@ -1,4 +1,5 @@
 const { randomUUID } = require('node:crypto');
+const { constants } = require('node:fs');
 const { mkdir, open, lstat, unlink } = require('node:fs/promises');
 const { join } = require('node:path');
 const { ApiError } = require('../utils/api-error');
@@ -50,6 +51,25 @@ function createFileStorage(directory) {
         return (await lstat(path)).isFile();
       } catch (error) {
         if (error.code === 'ENOENT') return false;
+        throw error;
+      }
+    },
+    async openPdf(reference) {
+      const path = filePath(reference);
+      if (!path) return null;
+      let handle;
+      try {
+        if (!(await lstat(path)).isFile()) return null;
+        handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+        const stats = await handle.stat();
+        if (!stats.isFile()) {
+          await handle.close();
+          return null;
+        }
+        return { size: stats.size, stream: handle.createReadStream() };
+      } catch (error) {
+        if (handle) await handle.close();
+        if (['ENOENT', 'ELOOP'].includes(error.code)) return null;
         throw error;
       }
     },

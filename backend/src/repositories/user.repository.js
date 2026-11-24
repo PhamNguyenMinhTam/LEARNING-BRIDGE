@@ -1,3 +1,4 @@
+const { isDatabaseUnavailable } = require('./mysql');
 const { ApiError } = require('../utils/api-error');
 
 const profile = 'id, full_name, email, role, status, school_id';
@@ -11,9 +12,7 @@ function createUserRepository(pool) {
       if (cause.code === 'ER_DUP_ENTRY') {
         throw new ApiError(409, 'EMAIL_IN_USE', 'Email already registered', cause);
       }
-      if (['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN',
-        'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_SERVER_SHUTDOWN'].includes(cause.code) ||
-        cause.message === 'No connections available.') {
+      if (isDatabaseUnavailable(cause)) {
         throw new ApiError(503, 'DATABASE_UNAVAILABLE', 'Database unavailable', cause);
       }
       throw cause;

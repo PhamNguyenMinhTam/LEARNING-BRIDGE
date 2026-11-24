@@ -1,3 +1,4 @@
+const { CommitOutcomeUnknown, isDatabaseUnavailable } = require('../repositories/mysql');
 const { ApiError } = require('../utils/api-error');
 
 function errorHandler(nodeEnv) {
@@ -17,6 +18,8 @@ function errorHandler(nodeEnv) {
     } else if (error.status === 404 && error.code === 'NOT_FOUND') {
       [status, code, message] = [404, 'NOT_FOUND', 'Route not found'];
     } else if (error.status === 503 && error.code === 'DATABASE_UNAVAILABLE') {
+      [status, code, message] = [503, 'DATABASE_UNAVAILABLE', 'Database unavailable'];
+    } else if (isDatabaseUnavailable(error instanceof CommitOutcomeUnknown ? error.cause : error)) {
       [status, code, message] = [503, 'DATABASE_UNAVAILABLE', 'Database unavailable'];
     } else if ([400, 415].includes(error.status)) {
       [status, code, message] = [error.status, 'INVALID_REQUEST', 'Invalid request body'];

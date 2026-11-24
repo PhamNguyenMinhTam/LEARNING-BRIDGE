@@ -100,5 +100,5 @@ function listResources(query) {
 
 module.exports = {
   associationInput, associationStatus, resourceScope, initialVersion, patchVersion, sourceVersion,
-  listResources, versionMetadata
+  listResources, versionMetadata, httpsUrl
 };

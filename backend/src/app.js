@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { schoolReviewRoutes } = require('./routes/review.routes');
 const { teacherRoutes } = require('./routes/teacher.routes');
 const { governmentRoutes } = require('./routes/government.routes');
 const { authRoutes } = require('./routes/auth.routes');
@@ -8,7 +9,7 @@ const { notFound } = require('./middlewares/notFound.middleware');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 function createApp({
-  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, trustProxy = false
+  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, reviews, trustProxy = false
 } = {}) {
   const app = express();
   app.set('env', nodeEnv);
@@ -17,7 +18,8 @@ function createApp({
   if (auth) {
     const sessionOptions = { ...auth, secure: nodeEnv === 'production' };
     app.use('/api/auth', authRoutes(sessionOptions));
-    if (government) app.use('/api/government', governmentRoutes(sessionOptions, government));
+    if (government) app.use('/api/government', governmentRoutes(sessionOptions, government, reviews));
+    if (reviews) app.use('/api/school', schoolReviewRoutes(sessionOptions, reviews));
     if (teacher) app.use('/api/teacher', teacherRoutes(sessionOptions, teacher));
   }
   app.use('/api', cors({
