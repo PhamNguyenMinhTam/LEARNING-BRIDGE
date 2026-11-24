@@ -3,10 +3,13 @@ async function one(db, sql, values) {
   return row;
 }
 
-async function withTransaction(pool, work) {
+async function withTransaction(pool, work, { readOnlySnapshot = false } = {}) {
   const connection = await pool.getConnection();
+  let started = false;
   try {
+    if (readOnlySnapshot) await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
     await connection.beginTransaction();
+    started = true;
     const result = await work(connection);
     try {
       await connection.commit();
@@ -16,7 +19,8 @@ async function withTransaction(pool, work) {
     return result;
   } catch (error) {
     try {
-      await connection.rollback();
+      if (!started && readOnlySnapshot) connection.destroy();
+      else await connection.rollback();
     } catch {
       connection.destroy();
     }
@@ -32,10 +36,21 @@ class CommitOutcomeUnknown extends Error {
   }
 }
 
+async function withLockRetry(pool, work, busyError) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await withTransaction(pool, work);
+    } catch (error) {
+      if (!['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT'].includes(error.code)) throw error;
+      if (attempt === 1) throw busyError();
+    }
+  }
+}
+
 function isDatabaseUnavailable(error) {
   return ['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN',
     'PROTOCOL_CONNECTION_LOST', 'ER_CON_COUNT_ERROR', 'ER_SERVER_SHUTDOWN'].includes(error?.code) ||
     error?.message === 'No connections available.';
 }
 
-module.exports = { one, withTransaction, CommitOutcomeUnknown, isDatabaseUnavailable };
+module.exports = { one, withTransaction, withLockRetry, CommitOutcomeUnknown, isDatabaseUnavailable };

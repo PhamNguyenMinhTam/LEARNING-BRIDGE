@@ -1,4 +1,4 @@
-const { withTransaction, CommitOutcomeUnknown } = require('../repositories/mysql');
+const { withTransaction, withLockRetry, CommitOutcomeUnknown } = require('../repositories/mysql');
 const { parseId } = require('../validators/input');
 const input = require('../validators/teacher');
 const { ApiError } = require('../utils/api-error');
@@ -136,7 +136,7 @@ function createResourceService(pool, resources, schools, associations, storage) 
     },
     submit(teacherId, versionId) {
       parseId(versionId);
-      return withTransaction(pool, async db => {
+      return withLockRetry(pool, async db => {
         const resource = await lockVersionContext(db, teacherId, versionId);
         const association = await validateScope(db, teacherId, resource);
         const version = found(await resources.lockVersion(db, resource.id, versionId), 'Version');
@@ -154,7 +154,7 @@ function createResourceService(pool, resources, schools, associations, storage) 
           resource_id: resource.id, version_id: versionId, review_id: reviewId,
           decision: 'pending', message: 'Resource version submitted for review'
         };
-      });
+      }, () => conflict('SUBMISSION_BUSY', 'Concurrent changes are in progress. Retry the request.'));
     }
   };
 }

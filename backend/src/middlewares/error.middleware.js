@@ -26,8 +26,8 @@ function errorHandler(nodeEnv) {
     }
 
     if (nodeEnv === 'development') {
-      const causeCode = error.cause?.code;
-      const diagnostic = /^(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ER_ACCESS_DENIED_ERROR|ER_BAD_DB_ERROR|ER_DBACCESS_DENIED_ERROR|PROTOCOL_SEQUENCE_TIMEOUT)$/.test(causeCode)
+      const causeCode = error.cause?.code ?? error.code;
+      const diagnostic = /^(ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ER_ACCESS_DENIED_ERROR|ER_BAD_DB_ERROR|ER_DBACCESS_DENIED_ERROR|ER_LOCK_DEADLOCK|ER_LOCK_WAIT_TIMEOUT|PROTOCOL_SEQUENCE_TIMEOUT)$/.test(causeCode)
         ? causeCode : undefined;
       console.error('API request failed', { method: req.method, status, code, diagnostic });
     }

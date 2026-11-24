@@ -1,3 +1,5 @@
+const { createPublicResourceRepository } = require('./repositories/public-resource.repository');
+const { createPublicResourceService } = require('./services/public-resource.service');
 const { createReviewRepository } = require('./repositories/review.repository');
 const { createReviewService } = require('./services/review.service');
 const { createTeacherSchoolRepository } = require('./repositories/teacher-school.repository');
@@ -36,6 +38,7 @@ function start() {
     checkDatabase: createDatabaseCheck(pool),
     government: createGovernmentService(createGovernmentRepository(pool)),
     reviews: createReviewService(pool, createReviewRepository(pool), storage),
+    publicResources: createPublicResourceService(createPublicResourceRepository(pool), storage, config.upload.maxSize),
     teacher: {
       schools,
       resources: createResourceService(pool, resourceRepository, schools, associationRepository, storage),

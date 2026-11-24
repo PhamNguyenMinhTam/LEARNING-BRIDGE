@@ -1,6 +1,6 @@
 # Learning Bridge — Backend
 
-Backend gồm nền tảng Express/MySQL của Phase 2.1, xác thực và phân quyền của Phase 2.2, Government Management APIs của Phase 2.3, Teacher APIs của Phase 2.4 và Review APIs của Phase 2.5. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
+Backend gồm nền tảng Express/MySQL của Phase 2.1, xác thực và phân quyền của Phase 2.2, Government Management APIs của Phase 2.3, Teacher APIs của Phase 2.4, Review APIs của Phase 2.5 và Student Public APIs của Phase 2.6. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
 
 ## Cài đặt trên Windows PowerShell
 
@@ -73,7 +73,7 @@ Dùng `npm.cmd start` để chạy không theo dõi thay đổi tệp. Dừng b�
 | 2.3 Government | Đã triển khai quản lý trường, pattern mã giáo viên và tài khoản quản trị trường. Duyệt đóng góp độc lập thuộc giai đoạn sau. |
 | 2.4 Teacher | Đã triển khai liên kết trường, Resource, Draft Version, PDF riêng tư và gửi duyệt |
 | 2.5 School & Government | Đã triển khai hàng chờ theo phạm vi, quyết định Review, xuất bản có điều kiện và withdrawal |
-| 2.6 Student | Tìm kiếm và lọc công khai, đọc phiên bản đã xuất bản, truy cập tệp an toàn và dùng liên kết chính thức |
+| 2.6 Student | Đã triển khai tìm kiếm, bộ lọc, chi tiết, truy cập PDF và URL HTTPS công khai |
 
 Kiểm tra pattern mã giáo viên chỉ xác nhận định dạng. Một giáo viên có thể khai báo liên kết nhiều trường. Đình chỉ trường không tự gỡ tài nguyên hợp lệ. Sửa nội dung đã duyệt tạo phiên bản mới. Trường chỉ duyệt hồ sơ thuộc phạm vi của mình, còn Government duyệt đóng góp độc lập. Học sinh tìm tài nguyên công khai mà không cần đăng nhập. Chỉ lưu bản sao sách giáo khoa chính thức khi có quyền. [Quy tắc nghiệp vụ](../database/docs/BUSINESS_RULES.md) · [Thiết kế transaction](../database/docs/DATABASE_DESIGN.md)
 
@@ -101,7 +101,7 @@ notepad .env
 
 - `SESSION_SECRET` là 32 byte ngẫu nhiên mã hóa base64url. Dùng cùng giá trị trên các instance phục vụ cùng ứng dụng. Thay secret sẽ làm cookie hiện có mất hiệu lực.
 - `SESSION_COOKIE_NAME` mặc định `learning_bridge.sid`. `SESSION_MAX_AGE_MS` mặc định 30 phút không hoạt động, chấp nhận từ 1 phút đến 8 giờ. Request có session hợp lệ gia hạn thời gian này.
-- `AUTH_ORIGINS` là danh sách origin chính xác, phân cách bằng dấu phẩy. Cấu hình cả origin của ứng dụng khi cùng origin và origin cụ thể của frontend khi chạy riêng. Giá trị production phải dùng HTTPS. `CORS_ORIGINS` dùng cho API ngoài các router session như health và không bật credentials.
+- `AUTH_ORIGINS` là danh sách origin chính xác, phân cách bằng dấu phẩy. Cấu hình cả origin của ứng dụng khi cùng origin và origin cụ thể của frontend khi chạy riêng. Giá trị production phải dùng HTTPS. `CORS_ORIGINS` dùng cho API ngoài các router session như health và Student Public và không bật credentials.
 - `TRUST_PROXY=off` mặc định. Chỉ đặt `TRUST_PROXY=loopback` khi reverse proxy HTTPS kết nối từ loopback, ghi đè `X-Forwarded-Proto` và `X-Forwarded-For`, và cổng Node chỉ cho proxy truy cập. Production từ chối auth qua HTTP.
 
 Chạy migration thủ công một lần bằng tài khoản triển khai MySQL có quyền DDL. Ví dụ dưới đây chạy từ thư mục gốc repo, thay tên schema và tài khoản theo môi trường.
@@ -192,3 +192,7 @@ Phase này giữ nguyên sáu bảng nghiệp vụ và migration session. Ngoài
 School Admin và Government dùng chung Review Service. Review sửa quyết định và con trỏ xuất bản trong cùng transaction. Government có thể chuyển Resource đã xuất bản sang hidden và giữ lịch sử Version và Review. Schema không lưu lý do withdrawal. Quy tắc an toàn chặn tự xuất bản Resource hidden đã từng có Review approved. [Review API, ví dụ và quy trình kiểm thử](docs/REVIEW_API.md)
 
 Ngoài quyền các phase trước, tài khoản ứng dụng cần `UPDATE (decision, reviewer_id, reviewed_at, review_note)` trên `resource_reviews` và `UPDATE (publication_status, published_version_id)` trên `resources`. Reviewer preview dùng chung kho PDF riêng của Phase 2.4. Frontend và schema giữ nguyên.
+
+## Phase 2.6 — Student Public APIs
+
+Khách truy cập dùng `/api/public/resources` và `/api/public/filters` để tìm tài nguyên và truy cập Published Version đủ điều kiện. Backend kiểm tra Review approved, quyền khai báo, access public và nội dung trên mỗi request. Khi Resource được Government rút xuất bản, các yêu cầu công khai mới trả 404. Giới hạn PDF dùng cấu hình hiện có. Public API dùng quyền SELECT sẵn có trên `resources`, `resource_versions` và `resource_reviews`. [Tài liệu Student Public API](docs/STUDENT_PUBLIC_API.md)

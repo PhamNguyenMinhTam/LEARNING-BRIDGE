@@ -1,4 +1,4 @@
-const { withTransaction } = require('../repositories/mysql');
+const { withLockRetry } = require('../repositories/mysql');
 const { parseId } = require('../validators/input');
 const { reviewFilters, reviewNote, withdrawalReason } = require('../validators/review');
 const { evaluatePublicationEligibility } = require('./publication.service');
@@ -21,15 +21,8 @@ function scopeMatches(actor, resource) {
   return actor.role === 'school_admin' && resource.review_scope === 'school' && resource.review_school_id === actor.school_id;
 }
 
-async function decisionTransaction(pool, work) {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      return await withTransaction(pool, work);
-    } catch (error) {
-      if (!['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT'].includes(error.code)) throw error;
-      if (attempt === 1) throw conflict('REVIEW_BUSY', 'Concurrent changes are in progress. Retry the request.');
-    }
-  }
+function decisionTransaction(pool, work) {
+  return withLockRetry(pool, work, () => conflict('REVIEW_BUSY', 'Concurrent changes are in progress. Retry the request.'));
 }
 
 function createReviewService(pool, repository, storage) {

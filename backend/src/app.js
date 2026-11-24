@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { publicRoutes } = require('./routes/public.routes');
 const { schoolReviewRoutes } = require('./routes/review.routes');
 const { teacherRoutes } = require('./routes/teacher.routes');
 const { governmentRoutes } = require('./routes/government.routes');
@@ -9,7 +10,7 @@ const { notFound } = require('./middlewares/notFound.middleware');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 function createApp({
-  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, reviews, trustProxy = false
+  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, reviews, publicResources, trustProxy = false
 } = {}) {
   const app = express();
   app.set('env', nodeEnv);
@@ -28,6 +29,7 @@ function createApp({
     methods: ['GET', 'HEAD'],
     allowedHeaders: ['Content-Type']
   }));
+  if (publicResources) app.use('/api/public', publicRoutes(publicResources));
   app.use(express.json({ limit: '32kb' }));
   app.use('/api', healthRoutes({ nodeEnv, checkDatabase }));
   app.use(notFound);

@@ -73,7 +73,8 @@ function createResourceRepository(pool) {
         AND edit_state = 'draft' LIMIT 1 FOR UPDATE`, [resourceId]);
     },
     pending(db, resourceId) {
-      return one(db, `SELECT rv.id FROM resource_versions v JOIN resource_reviews rv ON rv.version_id = v.id
+      return one(db, `SELECT rv.id FROM resource_versions v STRAIGHT_JOIN resource_reviews rv
+        FORCE INDEX (uq_resource_reviews_version) ON rv.version_id = v.id
         WHERE v.resource_id = CAST(? AS UNSIGNED) AND rv.decision = 'pending' LIMIT 1 FOR SHARE`, [resourceId]);
     },
     async insertVersion(db, resourceId, number, data) {
