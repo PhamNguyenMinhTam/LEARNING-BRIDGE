@@ -1,3 +1,5 @@
+const { ApiError } = require('../utils/api-error');
+
 function errorHandler(nodeEnv) {
   return (error, req, res, next) => {
     if (res.headersSent) return next(new Error('Response interrupted'));
@@ -10,6 +12,8 @@ function errorHandler(nodeEnv) {
       [status, code, message] = [400, 'INVALID_JSON', 'Malformed JSON body'];
     } else if (error.type === 'entity.too.large') {
       [status, code, message] = [413, 'PAYLOAD_TOO_LARGE', 'Request body is too large'];
+    } else if (error instanceof ApiError) {
+      ({ status, code, message } = error);
     } else if (error.status === 404 && error.code === 'NOT_FOUND') {
       [status, code, message] = [404, 'NOT_FOUND', 'Route not found'];
     } else if (error.status === 503 && error.code === 'DATABASE_UNAVAILABLE') {

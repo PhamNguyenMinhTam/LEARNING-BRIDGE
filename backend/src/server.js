@@ -2,6 +2,9 @@ const { createApp } = require('./app');
 const { loadConfig } = require('./config/env');
 const { createDatabasePool } = require('./config/database');
 const { createDatabaseCheck } = require('./repositories/health.repository');
+const { createUserRepository } = require('./repositories/user.repository');
+const { createAuthService } = require('./services/auth.service');
+const { MySqlSessionStore } = require('./repositories/session.store');
 
 function start() {
   let config;
@@ -14,13 +17,23 @@ function start() {
   }
 
   const pool = createDatabasePool(config.database);
-  const app = createApp({ ...config, checkDatabase: createDatabaseCheck(pool) });
+  const store = new MySqlSessionStore(pool);
+  const app = createApp({
+    ...config,
+    checkDatabase: createDatabaseCheck(pool),
+    auth: { ...config.session, store, auth: createAuthService(createUserRepository(pool)) }
+  });
+  const cleanup = setInterval(() => {
+    store.pruneExpired().catch(() => console.error('Could not prune expired sessions'));
+  }, 15 * 60 * 1000);
+  cleanup.unref();
   const server = app.listen(config.port, config.host);
   let shuttingDown = false;
 
   async function shutdown() {
     if (shuttingDown) return;
     shuttingDown = true;
+    clearInterval(cleanup);
     const deadline = setTimeout(() => {
       console.error('Shutdown timed out');
       process.exit(1);
