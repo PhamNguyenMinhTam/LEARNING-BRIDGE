@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('node:path');
 const cors = require('cors');
 const { publicRoutes } = require('./routes/public.routes');
 const { schoolReviewRoutes } = require('./routes/review.routes');
@@ -10,7 +11,7 @@ const { notFound } = require('./middlewares/notFound.middleware');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 function createApp({
-  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, reviews, publicResources, trustProxy = false
+  nodeEnv = 'production', corsOrigins = [], checkDatabase, auth, government, teacher, reviews, publicResources, serveUi = false, trustProxy = false
 } = {}) {
   const app = express();
   app.set('env', nodeEnv);
@@ -32,6 +33,13 @@ function createApp({
   if (publicResources) app.use('/api/public', publicRoutes(publicResources));
   app.use(express.json({ limit: '32kb' }));
   app.use('/api', healthRoutes({ nodeEnv, checkDatabase }));
+  if (serveUi) {
+    const root = path.resolve(__dirname, '../..');
+    for (const directory of ['teacher', 'school', 'gorvernment', 'student', 'frontend-shared']) {
+      app.use('/' + directory, express.static(path.join(root, directory), { dotfiles: 'deny' }));
+    }
+    app.get('/', (_req, res) => res.redirect('/student/'));
+  }
   app.use(notFound);
   app.use(errorHandler(nodeEnv));
   return app;

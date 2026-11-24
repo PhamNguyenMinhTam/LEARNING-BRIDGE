@@ -2,7 +2,7 @@ const { one, withTransaction } = require('./mysql');
 
 const joined = `FROM resource_reviews rv JOIN resource_versions v ON v.id = rv.version_id
   JOIN resources r ON r.id = v.resource_id JOIN users owner ON owner.id = r.owner_id`;
-const summary = `rv.id AS review_id, r.id AS resource_id, v.id AS version_id, v.title, v.version_number,
+const summary = `rv.id AS review_id, r.id AS resource_id, v.id AS version_id, v.title, v.version_number, v.category, v.resource_type,
   owner.full_name AS owner_name, rv.submitted_at, rv.reviewed_at, rv.decision, r.review_scope, r.review_school_id`;
 const scopeSql = {
   government: "r.review_scope = 'government' AND r.review_school_id IS NULL",
@@ -46,8 +46,8 @@ function createReviewRepository(pool) {
       });
     },
     detail(actor, id) {
-      return one(pool, `SELECT ${summary}, v.description, v.author_name, v.category, v.education_level,
-        v.resource_type, v.file_path, v.source_url, v.rights_basis, v.access_level, v.edit_state,
+      return one(pool, `SELECT ${summary}, v.description, v.author_name, v.education_level,
+        v.file_path, v.source_url, v.rights_basis, v.access_level, v.edit_state,
         rv.review_note, reviewer.full_name AS reviewer_name, r.publication_status, r.published_version_id,
         s.school_name, s.status AS school_status
         ${joined} LEFT JOIN users reviewer ON reviewer.id = rv.reviewer_id
@@ -62,7 +62,7 @@ function createReviewRepository(pool) {
       return rows;
     },
     school(id, db = pool, lock = false) {
-      return one(db, 'SELECT id, status FROM schools WHERE id = CAST(? AS UNSIGNED)' + (lock ? ' FOR UPDATE' : ''), [id]);
+      return one(db, 'SELECT id, school_name, school_code, status FROM schools WHERE id = CAST(? AS UNSIGNED)' + (lock ? ' FOR UPDATE' : ''), [id]);
     },
     lockActor(db, id) {
       return one(db, 'SELECT id, role, status, school_id FROM users WHERE id = CAST(? AS UNSIGNED) FOR UPDATE', [id]);

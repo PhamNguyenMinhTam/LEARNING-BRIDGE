@@ -11,6 +11,7 @@
   --danger: #a32638;
   --radius: 16px;
 }
+[hidden] { display: none !important; }
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; background: var(--background); color: var(--text); font: 1rem/1.5 Inter, "Segoe UI", system-ui, sans-serif; }
 h1, h2, p { margin: 0; }
@@ -103,5 +104,6 @@ dialog form { margin-top: .9rem; }
   td:last-child:has(.actions) { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; transition: none !important; }
+  [hidden] { display: none !important; }
+*, *::before, *::after { animation: none !important; scroll-behavior: auto !important; transition: none !important; }
 }

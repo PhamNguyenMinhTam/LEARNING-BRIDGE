@@ -1,235 +1,183 @@
-const resources = mockResources.map((resource) => ({ ...resource }));
-const statusLabels = { pending: "Chờ duyệt", approved: "Đã chấp thuận", rejected: "Đã từ chối" };
-const dateFormat = new Intl.DateTimeFormat("vi-VN", { dateStyle: "short" });
-const select = (id) => document.getElementById(id);
+(() => {
+  const { request, url } = bridge;
+  const { node, button, perform, pager, date } = bridgeUI;
+  const get = id => document.getElementById(id);
+  const status = get('review-status');
+  const dialog = get('review-dialog');
+  const confirmation = get('confirm-dialog');
+  const states = { pending: 'Chờ duyệt', approved: 'Đã chấp thuận', rejected: 'Đã từ chối' };
+  let pendingPage = 1;
+  let historyPage = 1;
+  let selected;
+  let decision;
+  let refreshSequence = 0;
 
-const search = select("search");
-const typeFilter = select("type-filter");
-const statusFilter = select("status-filter");
-const sort = select("sort");
-const historyFilter = select("history-filter");
-const reviewDialog = select("review-dialog");
-const confirmDialog = select("confirm-dialog");
-const note = select("review-note");
-let currentResource;
-let reviewTrigger;
-let proposedStatus;
-let decisionTrigger;
-
-function element(tag, text, className) {
-  const node = document.createElement(tag);
-  node.textContent = text;
-  if (className) node.className = className;
-  return node;
-}
-
-function badge(status) {
-  return element("span", statusLabels[status], "badge " + status);
-}
-
-function dateLabel(value) {
-  return dateFormat.format(new Date(value.length === 10 ? value + "T00:00:00" : value));
-}
-
-function normalize(text) {
-  return text.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/g, "d");
-}
-
-function renderSummary() {
-  for (const status of Object.keys(statusLabels)) {
-    select(status + "-count").textContent = resources.filter((resource) => resource.status === status).length;
-  }
-}
-
-function matchingResources() {
-  const query = normalize(search.value.trim());
-  const items = resources.filter((resource) =>
-    (!typeFilter.value || resource.resourceType === typeFilter.value) &&
-    (!statusFilter.value || resource.status === statusFilter.value) &&
-    [resource.title, resource.contributorName, resource.subject].some((value) => normalize(value).includes(query))
-  );
-  const order = {
-    newest: (a, b) => b.submittedAt.localeCompare(a.submittedAt),
-    oldest: (a, b) => a.submittedAt.localeCompare(b.submittedAt),
-    title: (a, b) => a.title.localeCompare(b.title, "vi")
-  };
-  return items.sort(order[sort.value]);
-}
-
-function resourceRow(resource) {
-  const row = document.createElement("tr");
-  const identity = row.insertCell();
-  identity.append(
-    element("span", resource.title, "resource-title"),
-    element("span", resource.contributorName, "muted")
-  );
-
-  const values = [
-    ["Môn học", element("span", resource.subject)],
-    ["Loại", element("span", resource.resourceType)],
-    ["Ngày gửi", element("time", dateLabel(resource.submittedAt))],
-    ["Trạng thái", badge(resource.status)]
-  ];
-  values[2][1].dateTime = resource.submittedAt;
-  for (const [label, value] of values) {
-    const cell = row.insertCell();
-    cell.dataset.label = label;
-    cell.append(value);
+  async function refresh() {
+    const sequence = ++refreshSequence;
+    const profile = await request('/school/profile');
+    const suspended = profile.school.status === 'suspended';
+    const queueStatus = get('status-filter').value;
+    const queueQuery = { page: pendingPage, limit: 12, search: get('search').value.trim(),
+      from: get('filter-from').value, to: get('filter-to').value };
+    const historyQuery = { page: historyPage, limit: 12, decision: get('history-filter').value };
+    const queue = (queueStatus === 'pending' && suspended) ? Promise.resolve(null)
+      : request('/school/reviews/' + (queueStatus === 'pending' ? 'pending' : 'history'), {
+        query: queueStatus === 'pending' ? queueQuery : { ...queueQuery, decision: queueStatus }
+      });
+    const [results, history, approved, rejected, pending] = await Promise.all([
+      queue, request('/school/reviews/history', { query: historyQuery }),
+      request('/school/reviews/history', { query: { decision: 'approved', limit: 1 } }),
+      request('/school/reviews/history', { query: { decision: 'rejected', limit: 1 } }),
+      suspended ? Promise.resolve(null) : request('/school/reviews/pending', { query: { limit: 1 } })
+    ]);
+    if (sequence !== refreshSequence) return;
+    get('school-profile').textContent = profile.school.school_name + ' · ' + profile.full_name;
+    status.textContent = suspended ? 'Trường đang bị đình chỉ. Bạn vẫn có thể xem lịch sử.' : '';
+    get('pending-count').textContent = pending?.pagination.total ?? '—';
+    get('approved-count').textContent = approved.pagination.total;
+    get('rejected-count').textContent = rejected.pagination.total;
+    get('result-count').textContent = results ? results.pagination.total + ' tài liệu' : 'Hàng chờ tạm thời không khả dụng.';
+    get('resources').replaceChildren();
+    for (const record of results?.data || []) {
+      const tr = node('tr');
+      for (const [label, value] of [
+        ['Tài liệu', record.title + ' · V' + record.version_number], ['Môn học', record.category], ['Loại', record.resource_type],
+        ['Ngày gửi', date(record.submitted_at)], ['Trạng thái', states[record.decision]]
+      ]) {
+        const td = node('td');
+        if (label === 'Tài liệu') td.append(node('span', value, 'resource-title'), node('small', record.owner_name));
+        else if (label === 'Trạng thái') td.append(node('span', value, 'badge ' + record.decision));
+        else td.textContent = value ?? '—';
+        td.dataset.label = label;
+        tr.append(td);
+      }
+      const action = node('td', null, 'row-actions');
+      action.append(button('Xem chi tiết', () => open(record.review_id)));
+      tr.append(action);
+      get('resources').append(tr);
+    }
+    get('empty').hidden = !results || results.data.length > 0;
+    get('queue-pages').replaceChildren(...(results ? [pager(results.pagination, page => {
+      pendingPage = page;
+      reload();
+    })] : []));
+    get('history-list').replaceChildren(...history.data.map(row => {
+      const li = node('li');
+      li.append(node('strong', row.title), node('p', states[row.decision] + ' · ' + date(row.reviewed_at)),
+        button('Xem lịch sử ' + row.title, () => open(row.review_id)));
+      return li;
+    }));
+    get('history-empty').hidden = history.data.length > 0;
+    get('history-pages').replaceChildren(pager(history.pagination, page => {
+      historyPage = page;
+      reload();
+    }));
   }
 
-  const actions = element("div", "", "actions row-actions");
-  const labels = resource.status === "pending" ? ["Xem chi tiết", "Kiểm duyệt"] : ["Xem chi tiết"];
-  for (const label of labels) {
-    const button = element("button", label, "button");
-    button.type = "button";
-    button.setAttribute("aria-label", label + " · " + resource.title);
-    button.addEventListener("click", () => openReview(resource, button, label === "Kiểm duyệt"));
-    actions.append(button);
-  }
-  row.insertCell().append(actions);
-  return row;
-}
-
-function renderResources() {
-  const items = matchingResources();
-  select("resources").replaceChildren(...items.map(resourceRow));
-  select("resource-table").hidden = !items.length;
-  select("empty").hidden = Boolean(items.length);
-  select("result-count").textContent = items.length + " tài liệu";
-}
-
-function historyItem(resource) {
-  const item = document.createElement("li");
-  const date = element("time", dateLabel(resource.reviewedAt));
-  date.dateTime = resource.reviewedAt;
-  const byline = element("p", resource.contributorName + " · ", "muted");
-  byline.append(date);
-  item.append(element("strong", resource.title, "resource-title"), byline, badge(resource.status));
-  if (resource.reviewNote) item.append(element("p", resource.reviewNote));
-  return item;
-}
-
-function renderHistory() {
-  const items = resources
-    .filter((resource) => resource.reviewedAt && (!historyFilter.value || resource.status === historyFilter.value))
-    .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt));
-  select("history-list").replaceChildren(...items.map(historyItem));
-  select("history-empty").hidden = Boolean(items.length);
-}
-
-function setNoteError(message) {
-  select("note-error").textContent = message;
-  note.setAttribute("aria-invalid", String(Boolean(message)));
-}
-
-function renderMetadata(resource) {
-  const details = [
-    ["Người đăng", resource.contributorName],
-    ["Môn học / lĩnh vực", resource.subject],
-    ["Loại tài liệu", resource.resourceType],
-    ["Mô tả", resource.description],
-    ["Chủ đề", resource.topics.join(", ")],
-    ["Ngày gửi", dateLabel(resource.submittedAt)],
-    ["Nguồn", resource.sourceName],
-    ["Quyền sử dụng", resource.rightsInformation]
-  ];
-  select("metadata").replaceChildren(...details
-    .filter(([, value]) => value)
-    .flatMap(([label, value]) => [element("dt", label), element("dd", value)]));
-}
-
-function openReview(resource, trigger, focusNote) {
-  currentResource = resource;
-  reviewTrigger = trigger;
-  select("detail-title").textContent = resource.title;
-  select("detail-status").replaceChildren(badge(resource.status));
-  renderMetadata(resource);
-
-  const pending = resource.status === "pending";
-  select("decision-fields").hidden = !pending;
-  const past = select("past-decision");
-  past.hidden = pending;
-  past.replaceChildren();
-  if (!pending) {
-    past.append(element("p", "Ngày kiểm duyệt: " + dateLabel(resource.reviewedAt)));
-    if (resource.reviewNote) past.append(element("p", resource.reviewNote));
-  }
-  note.value = "";
-  setNoteError("");
-  reviewDialog.scrollTop = 0;
-  reviewDialog.showModal();
-  (focusNote ? note : select("detail-title")).focus();
-}
-
-function requestDecision(status, trigger) {
-  if (status === "rejected" && !note.value.trim()) {
-    setNoteError("Vui lòng nhập lý do từ chối.");
-    note.focus();
-    return;
+  function reload() {
+    get('result-count').textContent = 'Đang tải…';
+    return refresh().catch(error => { status.textContent = error.message; });
   }
 
-  proposedStatus = status;
-  decisionTrigger = trigger;
-  select("confirm-message").textContent = status === "approved"
-    ? "Bạn muốn chấp thuận tài liệu này?"
-    : "Bạn muốn từ chối tài liệu này?";
-  confirmDialog.returnValue = "";
-  confirmDialog.showModal();
-}
-
-confirmDialog.addEventListener("close", () => {
-  if (!reviewDialog.open) return;
-  if (confirmDialog.returnValue !== "confirm") {
-    decisionTrigger.focus();
-    return;
+  async function open(id) {
+    selected = null;
+    get('detail-title').textContent = 'Đang tải chi tiết…';
+    get('metadata').replaceChildren();
+    get('decision-fields').hidden = true;
+    get('past-decision').hidden = true;
+    get('detail-status').textContent = '';
+    get('review-note').value = '';
+    get('note-error').textContent = '';
+    if (!dialog.open) dialog.showModal();
+    try {
+      const record = await request('/school/reviews/' + id);
+      if (!dialog.open) return;
+      selected = record;
+      get('detail-title').textContent = record.title;
+      get('detail-status').textContent = states[record.decision];
+      for (const [label, value] of [['Phiên bản', record.version_number], ['Tác giả', record.author_name],
+        ['Mô tả', record.description], ['Loại tài liệu', record.resource_type], ['Quyền phân phối', record.rights_basis],
+        ['Truy cập', record.access_level], ['Ngày gửi', date(record.submitted_at)]]) {
+        get('metadata').append(node('dt', label), node('dd', value));
+      }
+      if (record.has_file || record.source_url) {
+        const target = node('dd');
+        if (record.has_file) {
+          const file = node('a', 'Tải PDF để kiểm tra');
+          file.href = url('/school/reviews/' + id + '/preview');
+          target.append(file);
+        }
+        if (record.source_url) {
+          try { target.append(bridgeUI.external(record.source_url)); }
+          catch { target.append(node('span', 'URL nguồn không hợp lệ.')); }
+        }
+        get('metadata').append(node('dt', 'Nội dung'), target);
+      }
+      get('decision-fields').hidden = record.decision !== 'pending';
+      if (record.decision !== 'pending') {
+        get('past-decision').hidden = false;
+        get('past-decision').textContent = record.review_note || 'Không có ghi chú.';
+      }
+    } catch (error) {
+      get('detail-status').textContent = error.message;
+    }
   }
-  Object.assign(currentResource, {
-    status: proposedStatus,
-    reviewNote: note.value.trim(),
-    reviewedAt: new Date().toISOString()
+
+  function confirm(next) {
+    if (!selected) return;
+    const note = get('review-note').value.trim();
+    if (next === 'reject' && !note) {
+      get('note-error').textContent = 'Vui lòng nhập lý do từ chối.';
+      get('review-note').focus();
+      return;
+    }
+    decision = { id: selected.review_id, next, body: note ? { note } : {} };
+    get('confirm-message').textContent = next === 'approve' ? 'Chấp thuận phiên bản này?' : 'Từ chối phiên bản này?';
+    confirmation.showModal();
+  }
+
+  get('approve').addEventListener('click', () => confirm('approve'));
+  get('reject').addEventListener('click', () => confirm('reject'));
+  get('close-review').addEventListener('click', () => dialog.close());
+  get('confirm-action').addEventListener('click', event => {
+    event.preventDefault();
+    const current = decision;
+    perform(get('confirm-action'), get('confirm-message'), async () => {
+      try {
+        const result = await request('/school/reviews/' + current.id + '/' + current.next, {
+          method: 'POST', body: current.body
+        });
+        confirmation.close();
+        dialog.close();
+        pendingPage = 1;
+        await reload();
+        status.textContent = states[result.decision] + (result.publication_occurred
+          ? ' và đã xuất bản.' : ' · Trạng thái xuất bản: ' + (result.publication_status === 'published' ? 'đang xuất bản.' : 'đang ẩn.'));
+      } catch (error) {
+        if (error.status !== 409) throw error;
+        confirmation.close();
+        dialog.close();
+        await reload();
+        status.textContent = error.message;
+      }
+    });
   });
-  renderSummary();
-  renderResources();
-  renderHistory();
-  reviewDialog.close();
-  select("review-status").textContent = currentResource.title + " · " + statusLabels[proposedStatus] + ". " +
-    select("demo-notice").textContent;
-});
-
-reviewDialog.addEventListener("close", () => {
-  (reviewTrigger?.isConnected ? reviewTrigger : statusFilter).focus();
-});
-
-select("close-review").addEventListener("click", () => reviewDialog.close());
-select("approve").addEventListener("click", (event) => requestDecision("approved", event.currentTarget));
-select("reject").addEventListener("click", (event) => requestDecision("rejected", event.currentTarget));
-note.addEventListener("input", () => {
-  if (note.value.trim()) setNoteError("");
-});
-
-select("filters").addEventListener("submit", (event) => event.preventDefault());
-search.addEventListener("input", renderResources);
-for (const control of [typeFilter, statusFilter, sort]) control.addEventListener("change", renderResources);
-select("clear-filters").addEventListener("click", () => {
-  select("filters").reset();
-  statusFilter.value = "";
-  renderResources();
-  search.focus();
-});
-historyFilter.addEventListener("change", renderHistory);
-
-function updateNavigation() {
-  const active = window.location.hash || "#overview";
-  for (const link of document.querySelectorAll(".sidebar nav a")) {
-    if (link.hash === active) link.setAttribute("aria-current", "location");
-    else link.removeAttribute("aria-current");
+  let timer;
+  get('search').addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { pendingPage = 1; reload(); }, 300);
+  });
+  get('filters').addEventListener('submit', event => { event.preventDefault(); pendingPage = 1; reload(); });
+  for (const id of ['status-filter', 'filter-from', 'filter-to']) {
+    get(id).addEventListener('change', () => { pendingPage = 1; reload(); });
   }
-}
-window.addEventListener("hashchange", updateNavigation);
-
-const resourceTypes = [...new Set(resources.map((resource) => resource.resourceType))].sort((a, b) => a.localeCompare(b, "vi"));
-for (const type of resourceTypes) typeFilter.add(new Option(type, type));
-updateNavigation();
-renderSummary();
-renderResources();
-renderHistory();
+  get('history-filter').addEventListener('change', () => { historyPage = 1; reload(); });
+  get('clear-filters').addEventListener('click', () => { get('filters').reset(); pendingPage = 1; reload(); });
+  (async () => {
+    if (!await bridge.guard('school_admin')) return;
+    bridge.logout(get('logout'), status);
+    document.querySelector('.dashboard').hidden = false;
+    get('guard-status').hidden = true;
+    await reload();
+  })().catch(error => { get('guard-status').textContent = error.message; });
+})();

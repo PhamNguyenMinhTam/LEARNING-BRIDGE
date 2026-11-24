@@ -22,6 +22,7 @@ function schoolReviewRoutes({ origins, auth, ...sessionConfig }, service) {
   const router = createSessionRouter({ origins, secure: sessionConfig.secure }, ['GET', 'HEAD', 'POST']);
   const session = createSessionMiddleware(sessionConfig);
   router.use(session.load, requireAuth(auth, session.clear), requireRole('school_admin'), requireTrustedOrigin(origins));
+  router.get('/profile', createReviewController(service).schoolProfile);
   router.use('/reviews', reviewRoutes(service));
   return router;
 }

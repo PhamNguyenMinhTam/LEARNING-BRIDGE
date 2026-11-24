@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
@@ -6,8 +6,8 @@
   <meta name="description" content="Khám phá sách, bài giảng và tài liệu học tập với Learning Bridge.">
   <title>Learning Bridge | Explore Learning Resources</title>
   <link rel="stylesheet" href="style.css">
-  <script src="data/resources.js" defer></script>
-  <script src="script.js" defer></script>
+
+  <script src="/frontend-shared/api.js" defer></script><script src="/frontend-shared/ui.js" defer></script><script src="script.js" defer></script>
 </head>
 <body id="home">
   <a class="skip" href="#explore">Đến danh mục tài liệu</a>
@@ -48,7 +48,7 @@
     </section>
     <section id="explore" class="wrap catalog" aria-labelledby="results-title">
       <div class="catalog-heading">
-        <div><h2 id="results-title" tabindex="-1">Thư viện tài liệu</h2><p>Duyệt danh mục tài liệu minh họa.</p></div>
+        <div><h2 id="results-title" tabindex="-1">Thư viện tài liệu</h2><p>Tìm tài liệu đã xuất bản.</p></div>
         <button type="button" id="open-filters" class="secondary" aria-haspopup="dialog">Bộ lọc</button>
       </div>
       <div class="catalog-layout">
@@ -68,10 +68,10 @@
             <div class="sorting">
               <label for="sort">Sắp xếp</label>
               <select id="sort">
-                <option value="relevance">Độ liên quan</option>
+
                 <option value="newest">Mới nhất</option>
                 <option value="oldest">Cũ nhất</option>
-                <option value="title">Tiêu đề A–Z</option>
+                <option value="title_asc">Tiêu đề A–Z</option><option value="title_desc">Tiêu đề Z–A</option>
               </select>
             </div>
           </div>

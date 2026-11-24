@@ -6,8 +6,8 @@
   <title>Learning Bridge | School Login</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="login.css">
-  <script src="login.js" defer></script>
-</head>
+
+<script src="/frontend-shared/api.js" defer></script><script src="/frontend-shared/ui.js" defer></script><script src="/frontend-shared/auth.js" defer></script></head>
 <body class="login-page">
   <main class="login-layout">
     <aside class="login-brand" aria-label="Giới thiệu">
@@ -19,27 +19,27 @@
     </aside>
     <section class="login-panel" aria-labelledby="login-title">
       <div class="login-card">
-        <span class="demo">Frontend Demo</span>
+        <span class="demo">School Admin</span>
         <h1 id="login-title">Đăng nhập dành cho nhà trường</h1>
         <p class="muted">Tài khoản được cấp bởi bộ phận quản lý giáo dục.</p>
-        <form id="login-form" novalidate>
+        <form id="login-form" method="post" data-action="login" novalidate>
           <div class="field">
-            <label for="account">Tên tài khoản trường</label>
-            <input id="account" required autocomplete="off" aria-describedby="account-error">
+            <label for="account">Email trường</label>
+            <input id="account" type="email" required autocomplete="username" aria-describedby="account-error">
             <p id="account-error" class="error" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="password">Mật khẩu</label>
             <div class="password-wrap">
-              <input type="password" id="password" required autocomplete="off" aria-describedby="password-error">
+              <input type="password" id="password" required autocomplete="current-password" aria-describedby="password-error">
               <button type="button" id="toggle-password" class="button" aria-controls="password">Hiện mật khẩu</button>
             </div>
             <p id="password-error" class="error" aria-live="polite"></p>
           </div>
-          <button class="button primary" id="login-button" type="submit">Đăng nhập</button>
+          <button class="button primary" id="login-button" type="submit" disabled>Đăng nhập</button>
           <p id="login-status" class="notice" role="status"></p>
         </form>
-        <a class="demo-link" href="index.html">Xem giao diện Dashboard (Demo)</a>
+        <a class="demo-link" href="index.html">Mở trang kiểm duyệt</a>
       </div>
     </section>
   </main>

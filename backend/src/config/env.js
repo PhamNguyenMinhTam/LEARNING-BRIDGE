@@ -1,4 +1,5 @@
 const path = require('node:path');
+const { tmpdir } = require('node:os');
 const dotenv = require('dotenv');
 
 function port(value, name) {
@@ -68,9 +69,16 @@ function loadConfig() {
   if (!Number.isSafeInteger(maxSize) || maxSize < 1 || maxSize > 26214400) {
     throw new Error('Invalid TEACHER_PDF_MAX_BYTES');
   }
+  let uploadDirectory = path.resolve(__dirname, '../../private-uploads');
+  if (nodeEnv === 'test' && env.E2E_UPLOAD_DIRECTORY) {
+    const candidate = path.resolve(env.E2E_UPLOAD_DIRECTORY);
+    const relative = path.relative(tmpdir(), candidate);
+    if (!/^lb-e2e-uploads-[a-z0-9-]+$/i.test(relative)) throw new Error('Invalid E2E_UPLOAD_DIRECTORY');
+    uploadDirectory = candidate;
+  }
   return {
     nodeEnv,
-    upload: { directory: path.resolve(__dirname, '../../private-uploads'), maxSize },
+    upload: { directory: uploadDirectory, maxSize },
     host,
     port: httpPort,
     trustProxy: proxy === 'loopback' ? 'loopback' : false,

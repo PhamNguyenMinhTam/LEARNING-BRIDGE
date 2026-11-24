@@ -2,6 +2,9 @@ const { pipeline } = require('node:stream/promises');
 
 function createReviewController(service) {
   return {
+    async schoolProfile(req, res) {
+      res.json(await service.schoolProfile(req.user));
+    },
     async pending(req, res) {
       res.json(await service.list(req.user, req.query, false));
     },

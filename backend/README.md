@@ -196,3 +196,7 @@ Ngoài quyền các phase trước, tài khoản ứng dụng cần `UPDATE (dec
 ## Phase 2.6 — Student Public APIs
 
 Khách truy cập dùng `/api/public/resources` và `/api/public/filters` để tìm tài nguyên và truy cập Published Version đủ điều kiện. Backend kiểm tra Review approved, quyền khai báo, access public và nội dung trên mỗi request. Khi Resource được Government rút xuất bản, các yêu cầu công khai mới trả 404. Giới hạn PDF dùng cấu hình hiện có. Public API dùng quyền SELECT sẵn có trên `resources`, `resource_versions` và `resource_reviews`. [Tài liệu Student Public API](docs/STUDENT_PUBLIC_API.md)
+
+## Phase 2.7 — Frontend Integration
+
+`npm.cmd run dev` phục vụ cùng origin ở `/student/`, `/teacher/`, `/school/`, `/gorvernment/`. Backend chỉ mount các thư mục giao diện được cho phép. `GET /api/school/profile` trả tên, mã và trạng thái của trường thuộc session School Admin. API hàng chờ có thêm loại và danh mục để giao diện hiển thị bảng mà không phải gọi chi tiết từng dòng. Không cần migration mới. [Hướng dẫn tích hợp](../docs/INTEGRATION_GUIDE.md) · [Kết quả E2E](../docs/END_TO_END_TEST_REPORT.md)

@@ -8,6 +8,17 @@ Thay vì xây dựng một hệ thống thay thế hoàn toàn sách giáo khoa 
 
 ---
 
+## Chạy MVP cục bộ
+
+Express phục vụ bốn giao diện HTML/CSS/Vanilla JS và API trên cùng origin. Sau khi nạp MySQL schema và session migration, cấu hình `backend/.env`, chạy `npm.cmd ci` rồi `npm.cmd run dev` trong `backend/`.
+
+- Student công khai ở `/student/`.
+- Teacher đăng ký hoặc đăng nhập ở `/teacher/auth/register.html` và `/teacher/auth/login.html`.
+- School Admin đăng nhập ở `/school/login.html`.
+- Government đăng nhập ở `/gorvernment/auth/login.html`.
+
+[Hướng dẫn tích hợp và cấu hình](docs/INTEGRATION_GUIDE.md) · [Báo cáo kiểm thử E2E](docs/END_TO_END_TEST_REPORT.md)
+
 ## 1. Problem Statement
 
 ### Bối cảnh
@@ -334,7 +345,7 @@ Khi hoàn thiện phiên bản demo, dự án kỳ vọng:
 
 ## 12. Project Status
 
-**Status: Initial Development / Planning**
+**Status: MVP Integration**
 
 Dự án hiện ở giai đoạn xây dựng cấu trúc ban đầu. Những chức năng được mô tả trong tài liệu là thiết kế và định hướng phát triển, chưa mặc định là đã được triển khai.
 

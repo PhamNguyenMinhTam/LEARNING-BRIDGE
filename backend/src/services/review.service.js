@@ -59,6 +59,12 @@ function createReviewService(pool, repository, storage) {
   }
 
   return {
+    async schoolProfile(actor) {
+      if (actor.role !== 'school_admin' || !actor.school_id) throw forbidden();
+      const school = await repository.school(actor.school_id);
+      if (!school) throw notFound('School');
+      return { id: actor.id, full_name: actor.full_name, school };
+    },
     async list(actor, query, history) {
       const { page, limit, ...filters } = reviewFilters(query, history);
       await schoolAccess(actor, !history);

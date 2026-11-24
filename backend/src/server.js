@@ -35,6 +35,7 @@ function start() {
   const storage = createFileStorage(config.upload.directory);
   const app = createApp({
     ...config,
+    serveUi: true,
     checkDatabase: createDatabaseCheck(pool),
     government: createGovernmentService(createGovernmentRepository(pool)),
     reviews: createReviewService(pool, createReviewRepository(pool), storage),

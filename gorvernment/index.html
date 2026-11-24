@@ -3,23 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'self'; form-action 'none'; object-src 'none'">
   <title>Learning Bridge | Quản lý giáo dục</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="schools/requests.css">
   <link rel="stylesheet" href="schools/id-rules.css">
-  <script defer src="data/demo.js"></script>
-  <script defer src="shared/records.js"></script>
-  <script defer src="shared/ui.js"></script>
-  <script defer src="overview.js"></script>
-  <script defer src="schools/requests.js"></script>
-  <script defer src="schools/id-rules.js"></script>
-  <script defer src="schools/accounts.js"></script>
-  <script defer src="reviews/reviews.js"></script>
-  <script defer src="script.js"></script>
+  <script src="/frontend-shared/api.js" defer></script><script src="/frontend-shared/ui.js" defer></script><script defer src="script.js"></script>
 </head>
 <body>
-  <div class="layout">
+  <p id="guard-status" role="status">Đang kiểm tra phiên đăng nhập…</p><div class="layout" hidden>
     <aside class="sidebar">
       <div class="brand"><span aria-hidden="true">LB</span><div>Learning Bridge<small>Quản lý giáo dục</small></div></div>
       <button type="button" id="menu" aria-expanded="false" aria-controls="navigation">Menu điều hướng</button>
@@ -29,13 +21,13 @@
         <a href="#rules">Quy tắc mã giáo viên</a>
         <a href="#accounts">Tài khoản School</a>
         <a href="#reviews">Kiểm duyệt tài liệu độc lập</a>
-        <a class="login-link" href="auth/login.html">Về màn hình đăng nhập</a>
+        <button class="login-link" id="logout" type="button">Đăng xuất</button>
       </nav>
     </aside>
     <main id="main">
       <header class="topbar">
         <span>Quản lý giáo dục</span>
-        <span class="demo">Frontend Demo</span>
+        <span class="demo"><span id="government-profile"></span></span>
       </header>
       <div class="workspace">
         <h1 id="title" tabindex="-1"></h1>
