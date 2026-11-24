@@ -11,6 +11,7 @@
   let selected;
   let decision;
   let refreshSequence = 0;
+  let detailSequence = 0;
 
   async function refresh() {
     const sequence = ++refreshSequence;
@@ -80,6 +81,7 @@
   }
 
   async function open(id) {
+    const sequence = ++detailSequence;
     selected = null;
     get('detail-title').textContent = 'Đang tải chi tiết…';
     get('metadata').replaceChildren();
@@ -91,7 +93,7 @@
     if (!dialog.open) dialog.showModal();
     try {
       const record = await request('/school/reviews/' + id);
-      if (!dialog.open) return;
+      if (!dialog.open || sequence !== detailSequence) return;
       selected = record;
       get('detail-title').textContent = record.title;
       get('detail-status').textContent = states[record.decision];
@@ -119,7 +121,7 @@
         get('past-decision').textContent = record.review_note || 'Không có ghi chú.';
       }
     } catch (error) {
-      get('detail-status').textContent = error.message;
+      if (dialog.open && sequence === detailSequence) get('detail-status').textContent = error.message;
     }
   }
 

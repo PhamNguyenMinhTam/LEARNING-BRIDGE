@@ -261,6 +261,39 @@ test('A–G: real four-role workflow, including permissions, versioning and with
       await expect(other).toHaveURL(/expired=1/);
     });
 
+    await test.step('Phase 3.1 G: two School Admins decide on the same Pending Review', async () => {
+      const raceTitle = 'Kiểm duyệt đồng thời ' + tag;
+      const raceId = await draft(teacher, raceTitle, { school: name });
+      await submit(teacher);
+      const secondEmail = 'second-reviewer-' + tag + '@example.test';
+      const existingAdmin = await repository.findByEmail(adminEmail);
+      await pool.execute("INSERT INTO users (full_name,email,password_hash,role,school_id) VALUES (?,?,?,'school_admin',?)",
+        ['Second reviewer', secondEmail, passwordHash, existingAdmin.school_id]);
+      const secondReviewer = await newPage();
+      await login(secondReviewer, '/school/login.html', secondEmail);
+      await school.goto('/school/');
+      for (const reviewer of [school, secondReviewer]) {
+        await reviewer.getByRole('row').filter({ hasText: raceTitle }).getByRole('button', { name: 'Xem chi tiết' }).click();
+        await expect(reviewer.locator('#detail-title')).toHaveText(raceTitle);
+      }
+      await secondReviewer.locator('#review-note').fill('Lý do từ chối cạnh tranh');
+      await school.getByRole('button', { name: 'Chấp thuận', exact: true }).click();
+      await secondReviewer.getByRole('button', { name: 'Từ chối', exact: true }).click();
+      const responses = Promise.all([school.waitForResponse(r => r.url().endsWith('/approve')),
+        secondReviewer.waitForResponse(r => r.url().endsWith('/reject'))]);
+      await Promise.all([school.locator('#confirm-action').click(), secondReviewer.locator('#confirm-action').click()]);
+      const pair = await responses;
+      expect(pair.map(response => response.status()).sort()).toEqual([200, 409]);
+      const winner = await pair.find(response => response.status() === 200).json();
+      const loser = pair[0].status() === 409 ? school : secondReviewer;
+      await expect(loser.locator('#review-status')).toContainText('Tài liệu này đã được xử lý.');
+      const [rows] = await pool.execute(`SELECT rv.decision, rv.reviewer_id, r.published_version_id
+        FROM resources r JOIN resource_versions v ON v.resource_id = r.id
+        JOIN resource_reviews rv ON rv.version_id = v.id WHERE r.id = CAST(? AS UNSIGNED)`, [raceId]);
+      expect(rows).toEqual([{ decision: winner.decision, reviewer_id: winner.reviewer_id,
+        published_version_id: winner.decision === 'approved' ? winner.version_id : null }]);
+    });
+
     await test.step('G: Withdrawal disables public access and later approval cannot republish', async () => {
       await governmentPage.goto('/gorvernment/#reviews');
       await governmentPage.getByLabel('Resource ID').fill(id);

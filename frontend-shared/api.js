@@ -37,26 +37,49 @@
 
   async function request(path, { method = 'GET', body, query, signal, guest = false, redirect = true } = {}) {
     const form = body instanceof FormData;
-    let response;
+    const readOnly = method === 'GET' || method === 'HEAD';
+    const deadline = new AbortController();
+    const timeout = setTimeout(() => deadline.abort(), readOnly ? 15000 : 60000);
+    const combined = signal ? AbortSignal.any([signal, deadline.signal]) : deadline.signal;
     try {
-      response = await fetch(url(path, query), {
-        method, signal, credentials: guest ? 'omit' : 'same-origin',
+      const response = await fetch(url(path, query), {
+        method, signal: combined, credentials: guest ? 'omit' : 'same-origin',
         headers: body === undefined || form ? undefined : { 'Content-Type': 'application/json' },
         body: body === undefined || form ? body : JSON.stringify(body)
       });
-    } catch (error) {
-      if (error.name === 'AbortError') throw error;
-      throw new Error('Không thể kết nối đến máy chủ.');
-    }
-    const data = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
-    if (!response.ok) {
-      const code = data?.error?.code;
       if (response.status === 401 && protectedRole && redirect) location.replace(logins[protectedRole] + '?expired=1');
-      throw Object.assign(new Error(messages[code] || statusMessages[response.status] ||
-        (response.status >= 500 ? 'Máy chủ tạm thời không khả dụng.' : 'Yêu cầu không thành công.')),
-      { status: response.status, code });
+      let data;
+      if (response.headers.get('content-type')?.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (error) {
+          if (combined.aborted || error.name !== 'SyntaxError') throw error;
+        }
+      }
+      if (!response.ok) {
+        const code = data?.error?.code;
+        const message = Object.hasOwn(messages, code) ? messages[code] : statusMessages[response.status];
+        throw Object.assign(new Error(message ||
+          (response.status >= 500 ? 'Máy chủ tạm thời không khả dụng.' : 'Yêu cầu không thành công.')),
+        { status: response.status, code });
+      }
+      if (response.status === 204) return null;
+      if (!data || typeof data !== 'object') {
+        throw Object.assign(new Error('Máy chủ trả về dữ liệu không hợp lệ.'), { code: 'INVALID_RESPONSE' });
+      }
+      return data;
+    } catch (error) {
+      if (signal?.aborted) throw new DOMException('Request aborted', 'AbortError');
+      if (deadline.signal.aborted) {
+        throw new Error(readOnly ? 'Máy chủ phản hồi quá chậm. Vui lòng thử lại.'
+          : 'Chưa xác nhận được kết quả. Hãy tải lại dữ liệu trước khi gửi lại.');
+      }
+      if (error.status || error.code === 'INVALID_RESPONSE') throw error;
+      throw new Error(readOnly ? 'Không thể kết nối đến máy chủ.'
+        : 'Mất kết nối khi gửi yêu cầu. Hãy tải lại dữ liệu để kiểm tra kết quả.');
+    } finally {
+      clearTimeout(timeout);
     }
-    return data;
   }
 
   async function guard(role) {
