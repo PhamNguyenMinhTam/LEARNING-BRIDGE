@@ -70,9 +70,9 @@ flowchart TD
   C --> O["Đủ điều kiện Public API"]
 ```
 
-Service tái sử dụng publication policy Phase 2.5. Published Version do `published_version_id` xác định và có thể cũ hơn Draft hoặc Review mới. Public API chỉ serialize dữ liệu của Published Version. Withdraw đặt Resource thành `hidden` và xóa con trỏ theo schema, đồng thời giữ Review và Version. Mọi truy vấn public đều loại `hidden`. PDF được đối chiếu DB lần nữa sau khi mở tệp và mọi phản hồi public đều có `Cache-Control: no-store`. Withdrawal chặn yêu cầu mới. Luồng truyền đã bắt đầu và bản sao đã tải vẫn có thể tồn tại ngoài kiểm soát của API.
+Service tái sử dụng publication policy Phase 2.5. Published Version do `published_version_id` xác định và có thể cũ hơn Draft hoặc Review mới. Public API chỉ serialize dữ liệu của Published Version. Withdraw đặt Resource thành `hidden` và đánh dấu withdrawn. Từ Phase 3.2, con trỏ, Review và Version được giữ. Mọi truy vấn public đều loại `hidden`. PDF được đối chiếu DB lần nữa sau khi mở tệp và mọi phản hồi public đều có `Cache-Control: no-store`. Withdrawal chặn yêu cầu mới. Luồng truyền đã bắt đầu và bản sao đã tải vẫn có thể tồn tại ngoài kiểm soát của API.
 
-Schema thiếu dấu withdrawal riêng và audit reason. Quy tắc Phase 2.5 giữ nguyên: Resource hidden có lịch sử approved sẽ không tự xuất bản lại. Quy tắc cũng chặn một số Resource chưa từng xuất bản. Migration tương lai có thể thêm `withdrawn_at`, `withdrawn_by`, `withdrawal_reason` và một thao tác reinstatement được ủy quyền.
+Phase 3.2 lưu withdrawal trong MySQL. Resource legacy có hold mặc định tiếp tục giữ ẩn đến khi Government phục hồi rõ ràng. [Chi tiết migration](../../docs/DATA_INTEGRITY_REPORT.md)
 
 ## PDF và External Link
 

@@ -225,8 +225,32 @@ test('Public API enforces selected Version, access policy and withdrawal on isol
   }
   const afterWithdrawal = await version(publicFile.id, { ...pdfOptions, number: 2, decision: 'pending' });
   const stillHidden = await json(await govPost('reviews/' + afterWithdrawal.reviewId + '/approve', {}), 200);
-  assert.equal(stillHidden.publication_reason, 'HIDDEN_WITH_APPROVAL_HISTORY');
+  assert.equal(stillHidden.publication_reason, 'ADMINISTRATIVE_HOLD');
   assert.deepEqual(await json(await get('/resources/' + publicFile.id + '/download'), 404), notFound);
-  const afterFilters = await json(await get('/filters'), 200);
+  const reinstatePath = 'resources/' + publicFile.id + '/reinstate';
+  const [[held]] = await pool.execute('SELECT administrative_status, withdrawal_reason, published_version_id FROM resources WHERE id = CAST(? AS UNSIGNED)', [publicFile.id]);
+  assert.deepEqual(held, { administrative_status: 'withdrawn', withdrawal_reason: 'Fixture withdrawal', published_version_id: publicFile.versionId });
+  await json(await fetch(base + '/api/government/' + reinstatePath, {
+    method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ version_id: publicFile.versionId })
+  }), 401);
+  const restricted = await version(publicFile.id, { ...pdfOptions, number: 3, access: 'restricted' });
+  assert.equal((await json(await govPost(reinstatePath, { version_id: restricted.versionId }), 409)).error.code,
+    'ACCESS_RESTRICTED');
+  const missing = await version(publicFile.id, { ...pdfOptions, number: 4, file: randomUUID() + '.pdf' });
+  assert.equal((await json(await govPost(reinstatePath, { version_id: missing.versionId }), 409)).error.code,
+    'CONTENT_UNAVAILABLE');
+  await json(await govPost(reinstatePath, { version_id: publicLink.versionId }), 404);
+    const afterFilters = await json(await get('/filters'), 200);
   assert.ok(!afterFilters.categories.includes('Ngữ văn ' + tag));
+  const restartedPool = createDatabasePool(config.database);
+  try {
+    const restarted = createPublicResourceService(createPublicResourceRepository(restartedPool), storage, 4096);
+    await assert.rejects(restarted.detail(publicFile.id, {}), { status: 404 });
+  } finally {
+    await restartedPool.end();
+  }
+  const restored = await json(await govPost(reinstatePath, { version_id: publicFile.versionId }), 200);
+  assert.equal(restored.published_version_id, publicFile.versionId);
+  assert.equal((await get('/resources/' + publicFile.id + '/download')).status, 200);
 });

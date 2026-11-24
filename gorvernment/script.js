@@ -256,7 +256,7 @@
 
   function withdrawal() {
     const panel = card('Rút xuất bản');
-    panel.append(node('p', 'Nhập Resource ID để rút bản công khai. Lý do được kiểm tra khi gửi và chưa có nhật ký lưu bền vững.'),
+    panel.append(node('p', 'Nhập Resource ID để rút bản công khai. Hệ thống lưu lý do của lần rút xuất bản gần nhất.'),
       form([field('Resource ID', 'id'), field('Lý do rút xuất bản', 'reason', { type: 'textarea', maxLength: 2000 })],
         'Rút xuất bản', async ({ id, reason }) => {
           if (!/^[1-9][0-9]{0,19}$/.test(id)) throw new Error('Resource ID không hợp lệ.');

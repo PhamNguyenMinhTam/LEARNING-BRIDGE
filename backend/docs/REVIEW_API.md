@@ -57,13 +57,13 @@ Phản hồi `200` khi approval thành công nhưng Version mới là restricted
 }
 ```
 
-Các lý do khác gồm `RIGHTS_NOT_ELIGIBLE`, `CONTENT_UNAVAILABLE` và `HIDDEN_WITH_APPROVAL_HISTORY`. Nếu xuất bản diễn ra, `publication_reason` là `null`. Rejection yêu cầu nội dung sau khi trim, tối đa 2.000 ký tự, và giữ tất cả Version và Review.
+Các lý do khác gồm `RIGHTS_NOT_ELIGIBLE`, `CONTENT_UNAVAILABLE` và `ADMINISTRATIVE_HOLD`. Nếu xuất bản diễn ra, `publication_reason` là `null`. Rejection yêu cầu nội dung sau khi trim, tối đa 2.000 ký tự, và giữ tất cả Version và Review.
 
-## Withdrawal
+## Withdrawal và reinstatement
 
-`POST /api/government/resources/:id/withdraw` nhận `{"reason":"Quyền phân phối đã hết hiệu lực"}`. Trong transaction, backend khóa Resource và xác nhận Published Version có Review approved. Schema yêu cầu `publication_status=hidden` đi cùng `published_version_id=NULL`, nên rút xuất bản cập nhật cả hai cột. Phản hồi có `withdrawn_version_id` và `reason_recorded:false`. Version và Review được giữ. Lý do được kiểm tra nhưng không có cột hoặc audit store để lưu bền vững.
+Từ Phase 3.2, `POST /api/government/resources/:id/withdraw` nhận `{"reason":"Quyền phân phối đã hết hiệu lực"}`. Cùng khóa Resource, API chuyển publication sang hidden, đánh dấu withdrawn, giữ Published Version pointer và lưu lý do lần rút gần nhất. Version và Review vẫn còn. Approval sau đó có thể hoàn tất Review nhưng giữ trạng thái ẩn.
 
-Để ngăn tự xuất bản lại, Resource `hidden` có bất kỳ Review approved trước đó sẽ tiếp tục bị chặn khi duyệt Version mới. Quy tắc này dựa trên lịch sử trong MySQL và vẫn áp dụng sau khi server khởi động lại. Nó cũng chặn Resource từng approved nhưng chưa được xuất bản, ví dụ lần đầu duyệt Version restricted. Quy tắc dựa vào việc giữ lịch sử Review và mọi đường ghi tuân thủ chính sách ứng dụng. Một migration tương lai có thể bổ sung `withdrawn_at`, `withdrawn_by` và `withdrawal_reason` để biểu diễn rõ trạng thái, đồng thời thiết kế thao tác reinstatement riêng có audit. Phase 2.5 giữ nguyên schema.
+Chỉ Government có thể gọi `POST /api/government/resources/:id/reinstate` với `{"version_id":"12"}`. API kiểm tra lại Review, access, rights và khả dụng nội dung trước khi công bố. `legacy_hold` giữ ẩn dữ liệu cũ không thể phân biệt chính xác. [Migration, rollback và contract](../../docs/DATA_INTEGRITY_REPORT.md)
 
 ## Transaction và các yêu cầu đồng thời
 

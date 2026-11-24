@@ -2,14 +2,14 @@ const { one, withTransaction } = require('./mysql');
 const { ApiError } = require('../utils/api-error');
 
 const collation = 'utf8mb4_0900_ai_ci';
-const select = `SELECT r.id, r.publication_status, r.published_version_id, r.created_at,
+const select = `SELECT r.id, r.administrative_status, r.publication_status, r.published_version_id, r.created_at,
   CAST(r.created_at AS CHAR) AS created_cursor,
   v.id AS version_id, v.resource_id, v.title, v.description, v.author_name, v.category,
   v.education_level, v.resource_type, v.file_path, v.source_url, v.rights_basis, v.access_level,
   v.version_number, v.edit_state, rv.version_id AS reviewed_version_id, rv.decision
   FROM resources r JOIN resource_versions v ON v.resource_id = r.id AND v.id = r.published_version_id
   JOIN resource_reviews rv ON rv.version_id = v.id AND rv.decision = 'approved'
-  WHERE r.publication_status = 'published' AND v.edit_state = 'submitted'
+  WHERE r.administrative_status = 'normal' AND r.publication_status = 'published' AND v.edit_state = 'submitted'
     AND v.access_level = 'public' AND v.rights_basis IN ('own_work', 'open_license', 'authorized_distribution', 'official_link')`;
 
 const orderBy = {

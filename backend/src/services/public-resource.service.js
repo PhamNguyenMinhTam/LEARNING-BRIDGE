@@ -14,7 +14,7 @@ function publicMetadata(row) {
 }
 
 function eligible(row, hasFile) {
-  if (!row || row.publication_status !== 'published' || row.published_version_id !== row.version_id) return false;
+  if (!row || row.administrative_status !== 'normal' || row.publication_status !== 'published' || row.published_version_id !== row.version_id) return false;
   return evaluatePublicationEligibility(row, { ...row, id: row.version_id }, {
     version_id: row.reviewed_version_id, decision: row.decision
   }, { hasFile }) === null;

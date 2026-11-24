@@ -26,7 +26,7 @@ test('publication validates scope of Version and Review, content, rights, access
   assert.equal(evaluate({ source_url: null }), 'CONTENT_UNAVAILABLE');
   assert.equal(evaluate({ resource_type: 'pdf', rights_basis: 'own_work', file_path: 'report.pdf' }), 'CONTENT_UNAVAILABLE');
   assert.equal(evaluate({ resource_type: 'pdf', rights_basis: 'own_work', file_path: 'report.pdf' }, { hasFile: true }), null);
-  assert.equal(evaluate({}, { withheld: true }), 'HIDDEN_WITH_APPROVAL_HISTORY');
+  assert.equal(evaluate({}, { withheld: true }), 'ADMINISTRATIVE_HOLD');
 });
 
 test('review input rejects abusive filters and blank rejection notes', () => {

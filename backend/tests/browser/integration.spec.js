@@ -1,4 +1,7 @@
 const { test, expect } = require('@playwright/test');
+const { spawn } = require('node:child_process');
+const { once } = require('node:events');
+const { createServer } = require('node:net');
 const { readFile } = require('node:fs/promises');
 const { randomUUID } = require('node:crypto');
 const { loadConfig } = require('../../src/config/env');
@@ -306,6 +309,30 @@ test('A–G: real four-role workflow, including permissions, versioning and with
       }
       await search(student, title);
       await expect(student.locator('#resources')).toContainText('Không tìm thấy tài liệu phù hợp.');
+      expect((await teacher.request.post('/api/government/resources/' + id + '/reinstate',
+        { headers: { Origin: baseURL }, data: { version_id: '1' } })).status()).toBe(403);
+
+      const reservation = createServer().listen(0, '127.0.0.1');
+      await once(reservation, 'listening');
+      const port = reservation.address().port;
+      await new Promise(resolve => reservation.close(resolve));
+      const restartOrigin = 'http://127.0.0.1:' + port;
+      const restarted = spawn(process.execPath, ['src/server.js'], {
+        env: { ...process.env, NODE_ENV: 'test', HOST: '127.0.0.1', PORT: String(port), AUTH_ORIGINS: restartOrigin },
+        stdio: ['ignore', 'ignore', 'ignore']
+      });
+      const closed = once(restarted, 'close');
+      try {
+        await expect.poll(async () => {
+          try { return (await fetch(restartOrigin + '/api/health')).status; } catch { return 0; }
+        }).toBe(200);
+        for (const suffix of ['', '/download', '/preview']) {
+          expect((await fetch(restartOrigin + '/api/public/resources/' + id + suffix)).status).toBe(404);
+        }
+      } finally {
+        restarted.kill();
+        await closed;
+      }
 
       await teacher.reload();
       await teacher.locator('.resource-list article').filter({ hasText: title }).getByRole('button', { name: 'Xem tài liệu' }).click();

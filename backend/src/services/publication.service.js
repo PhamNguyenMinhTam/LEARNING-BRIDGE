@@ -22,7 +22,7 @@ function evaluatePublicationEligibility(resource, version, review, { hasFile = f
   if ((version.resource_type === 'external_link' && (!url || version.file_path)) ||
       (version.resource_type === 'pdf' && !availableFile) ||
       (version.resource_type === 'authored_document' && (!availableFile && !url))) return 'CONTENT_UNAVAILABLE';
-  if (withheld) return 'HIDDEN_WITH_APPROVAL_HISTORY';
+  if (withheld) return 'ADMINISTRATIVE_HOLD';
   return null;
 }
 

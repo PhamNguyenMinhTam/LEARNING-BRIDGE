@@ -11,7 +11,7 @@ const { pdf } = require('./fixtures/teacher-pdf');
 
 const base = {
   id: '1', resource_id: '1', version_id: '2', reviewed_version_id: '2', published_version_id: '2',
-  publication_status: 'published', edit_state: 'submitted', decision: 'approved', access_level: 'public',
+  administrative_status: 'normal', publication_status: 'published', edit_state: 'submitted', decision: 'approved', access_level: 'public',
   rights_basis: 'official_link', resource_type: 'external_link', file_path: null,
   source_url: 'https://example.invalid/lesson', title: 'Bài học', description: 'Summary', author_name: 'Teacher',
   category: 'Toán', education_level: 'THCS', version_number: 1, created_at: new Date('2026-01-01T00:00:00Z'),
@@ -105,5 +105,7 @@ test('private PDF access validates bytes, limits size, and denies traversal', as
   assert.equal(await storage.openPublicPdf(link, 1024), null);
   const linkedRoot = join(root, 'linked-private');
   await symlink(directory, linkedRoot, process.platform === 'win32' ? 'junction' : 'dir');
-  assert.equal(await createFileStorage(linkedRoot).openPublicPdf(reference, 1024), null);
+  const linkedStorage = createFileStorage(linkedRoot);
+  assert.equal(await linkedStorage.openPublicPdf(reference, 1024), null);
+  await assert.rejects(linkedStorage.save(content), { code: 'STORAGE_UNAVAILABLE' });
 });

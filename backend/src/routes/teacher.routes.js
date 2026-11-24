@@ -3,7 +3,7 @@ const { createSessionMiddleware } = require('../config/session');
 const { createTeacherController } = require('../controllers/teacher.controller');
 const { requireTrustedOrigin } = require('../middlewares/auth-origin');
 const { requireAuth, requireRole } = require('../middlewares/authorization');
-const { createSessionRouter } = require('../middlewares/session-api');
+const { createSessionRouter, accountRateLimit } = require('../middlewares/session-api');
 const { pdfUpload } = require('../middlewares/upload');
 
 function teacherRoutes({ origins, auth, ...sessionConfig }, { schools, resources, maxSize }) {
@@ -23,7 +23,7 @@ function teacherRoutes({ origins, auth, ...sessionConfig }, { schools, resources
   router.get('/resources/:id/reviews', controller.reviews);
   router.post('/resources/:id/versions', parseJson, controller.copy);
   router.patch('/versions/:id', parseJson, controller.patch);
-  router.post('/versions/:id/upload', controller.checkUpload, pdfUpload(maxSize), controller.upload);
+  router.post('/versions/:id/upload', accountRateLimit(30), controller.checkUpload, pdfUpload(maxSize), controller.upload);
   router.post('/versions/:id/submit', controller.submit);
   return router;
 }

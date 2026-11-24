@@ -16,7 +16,9 @@ function governmentRoutes({ origins, auth, ...sessionConfig }, service, reviews)
   router.use(session.load, requireAuth(auth, session.clear), requireRole('government'), requireTrustedOrigin(origins));
   if (reviews) {
     router.use('/reviews', reviewRoutes(reviews));
-    router.post('/resources/:id/withdraw', parseJson, createReviewController(reviews).withdraw);
+    const publication = createReviewController(reviews);
+    router.post('/resources/:id/withdraw', parseJson, publication.withdraw);
+    router.post('/resources/:id/reinstate', parseJson, publication.reinstate);
   }
   router.get('/schools', controller.listSchools);
   router.get('/schools/:id', controller.getSchool);

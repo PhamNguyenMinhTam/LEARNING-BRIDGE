@@ -16,6 +16,14 @@ function createApp({
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.set({
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'X-Frame-Options': 'SAMEORIGIN'
+    });
+    next();
+  });
   app.set('trust proxy', trustProxy);
   if (auth) {
     const sessionOptions = { ...auth, secure: nodeEnv === 'production' };

@@ -186,11 +186,11 @@ test('School and Government review HTTP workflow on isolated MySQL', {
   await json(await request(withdrawPath, gov, 'POST', { reason: ' ' }), 400);
   const withdrawn = await json(await request(withdrawPath, gov, 'POST', { reason: 'Rights expired' }), 200);
   assert.equal(withdrawn.withdrawn_version_id, replacement.version_id);
-  assert.equal(withdrawn.reason_recorded, false);
-  assert.equal(withdrawn.published_version_id, null);
+  assert.equal(withdrawn.reason_recorded, true);
+  assert.equal(withdrawn.published_version_id, replacement.version_id);
   const afterWithdrawal = await revised(resource);
   const blocked = await decide('school', (await submit(afterWithdrawal)).review_id, 'approve', adminA);
-  assert.equal(blocked.publication_reason, 'HIDDEN_WITH_APPROVAL_HISTORY');
+  assert.equal(blocked.publication_reason, 'ADMINISTRATIVE_HOLD');
   assert.equal(blocked.publication_status, 'hidden');
   const [[publicRow]] = await pool.execute(`SELECT id FROM resources WHERE id = CAST(? AS UNSIGNED)
     AND publication_status = 'published' AND published_version_id IS NOT NULL`, [resource.resource_id]);
@@ -203,8 +203,8 @@ test('School and Government review HTTP workflow on isolated MySQL', {
   assert.equal(hiddenApproval.publication_status, 'hidden');
   const eventuallyPublic = await revised(initiallyRestricted);
   await json(await request('teacher/versions/' + eventuallyPublic.version_id, teacher, 'PATCH', { access_level: 'public' }), 200);
-  const conservativelyBlocked = await decide('government', (await submit(eventuallyPublic)).review_id, 'approve', gov);
-  assert.equal(conservativelyBlocked.publication_reason, 'HIDDEN_WITH_APPROVAL_HISTORY');
+  const newlyPublished = await decide('government', (await submit(eventuallyPublic)).review_id, 'approve', gov);
+  assert.equal(newlyPublished.publication_reason, null);
 
   const file = await teacherPost('resources', { ...draft, resource_type: 'authored_document',
     rights_basis: 'own_work', source_url: null });

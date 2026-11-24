@@ -1,4 +1,4 @@
-const { withTransaction } = require('../repositories/mysql');
+const { withLockRetry } = require('../repositories/mysql');
 const { parseId } = require('../validators/input');
 const { associationInput, associationStatus } = require('../validators/teacher');
 const { compileTeacherIdPattern } = require('../validators/teacher-id-pattern');
@@ -34,6 +34,8 @@ function createTeacherSchoolService(pool, associations, resources) {
     return school;
   }
 
+  const busy = () => conflict('ASSOCIATION_BUSY', 'Concurrent changes are in progress. Retry the request.');
+
   return {
     available: associations.available,
     list: associations.list,
@@ -48,7 +50,7 @@ function createTeacherSchoolService(pool, associations, resources) {
     activeTeacher,
     declare(teacherId, body) {
       const { schoolId, code } = associationInput(body);
-      return withTransaction(pool, async db => {
+      return withLockRetry(pool, async db => {
         const school = await activeSchool(db, schoolId);
         await activeTeacher(db, teacherId);
         const row = await associations.pairForUpdate(db, teacherId, schoolId);
@@ -57,12 +59,12 @@ function createTeacherSchoolService(pool, associations, resources) {
         const id = row?.id ?? await associations.insert(db, teacherId, schoolId, code);
         if (row) await associations.activate(db, id, code);
         return { created: !row, association: await associations.association(db, teacherId, id) };
-      });
+      }, busy);
     },
     changeStatus(teacherId, id, body) {
       parseId(id);
       const status = associationStatus(body);
-      return withTransaction(pool, async db => {
+      return withLockRetry(pool, async db => {
         const current = await associations.association(db, teacherId, id);
         if (!current) throw missing('School association');
         const school = status === 'active' ? await activeSchool(db, current.school_id)
@@ -77,7 +79,7 @@ function createTeacherSchoolService(pool, associations, resources) {
           await associations.inactivate(db, id);
         }
         return { ...await associations.association(db, teacherId, id), school_status: school.status };
-      });
+      }, busy);
     }
   };
 }

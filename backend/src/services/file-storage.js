@@ -79,7 +79,10 @@ function createFileStorage(directory) {
       validatePdf(buffer);
       await mkdir(directory, { recursive: true, mode: 0o700 });
       const reference = randomUUID() + '.pdf';
-      const path = filePath(reference);
+      if (!(await lstat(directory)).isDirectory()) {
+        throw new ApiError(503, 'STORAGE_UNAVAILABLE', 'Private storage unavailable');
+      }
+      const path = join(await realpath(directory), reference);
       const file = await open(path, 'wx', 0o600);
       try {
         try {
@@ -105,7 +108,7 @@ function createFileStorage(directory) {
       }
     },
     async openPdf(reference) {
-      const file = await openStored(reference);
+      const file = await openStored(reference, { verify: true });
       return file ? { size: file.size, stream: file.stream() } : null;
     },
     openPublicPdf(reference, maxSize) {

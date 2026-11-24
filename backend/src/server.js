@@ -38,7 +38,7 @@ function start() {
     serveUi: true,
     checkDatabase: createDatabaseCheck(pool),
     government: createGovernmentService(createGovernmentRepository(pool)),
-    reviews: createReviewService(pool, createReviewRepository(pool), storage),
+    reviews: createReviewService(pool, createReviewRepository(pool), storage, config.upload.maxSize),
     publicResources: createPublicResourceService(createPublicResourceRepository(pool), storage, config.upload.maxSize),
     teacher: {
       schools,

@@ -2,7 +2,8 @@ const { one, withTransaction } = require('./mysql');
 
 const versionFields = ['title', 'description', 'author_name', 'category', 'education_level',
   'resource_type', 'source_url', 'rights_basis', 'access_level', 'file_path'];
-const resourceQuery = `SELECT r.*, s.school_name, s.school_code, s.status AS school_status
+const resourceQuery = `SELECT r.id, r.owner_id, r.review_scope, r.review_school_id, r.publication_status,
+  r.published_version_id, r.administrative_status, r.created_at, s.school_name, s.school_code, s.status AS school_status
   FROM resources r LEFT JOIN schools s ON s.id = r.review_school_id`;
 const versionOwner = 'WHERE r.id = CAST(? AS UNSIGNED) AND r.owner_id = CAST(? AS UNSIGNED)';
 

@@ -200,3 +200,7 @@ Khách truy cập dùng `/api/public/resources` và `/api/public/filters` để 
 ## Phase 2.7 — Frontend Integration
 
 `npm.cmd run dev` phục vụ cùng origin ở `/student/`, `/teacher/`, `/school/`, `/gorvernment/`. Backend chỉ mount các thư mục giao diện được cho phép. `GET /api/school/profile` trả tên, mã và trạng thái của trường thuộc session School Admin. API hàng chờ có thêm loại và danh mục để giao diện hiển thị bảng mà không phải gọi chi tiết từng dòng. Không cần migration mới. [Hướng dẫn tích hợp](../docs/INTEGRATION_GUIDE.md) · [Kết quả E2E](../docs/END_TO_END_TEST_REPORT.md)
+
+## Phase 3.2 — Security Hardening
+
+Áp dụng thủ công `migrations/002_resource_withdrawal.sql` sau `001_auth_sessions.sql` trước khi chạy mới hoặc chạy integration tests. Withdrawal lưu trạng thái và lý do lần gần nhất, giữ con trỏ xuất bản cũ. Government có thể phục hồi qua `POST /api/government/resources/:id/reinstate` với `version_id` dạng chuỗi. [Migration và API](../docs/DATA_INTEGRITY_REPORT.md) · [Checklist triển khai](../docs/DEPLOYMENT_SECURITY_CHECKLIST.md)

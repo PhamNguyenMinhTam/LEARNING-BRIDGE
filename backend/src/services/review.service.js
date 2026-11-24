@@ -1,5 +1,5 @@
 const { withLockRetry } = require('../repositories/mysql');
-const { parseId } = require('../validators/input');
+const { parseId, requireFields } = require('../validators/input');
 const { reviewFilters, reviewNote, withdrawalReason } = require('../validators/review');
 const { evaluatePublicationEligibility } = require('./publication.service');
 const { ApiError } = require('../utils/api-error');
@@ -25,7 +25,7 @@ function decisionTransaction(pool, work) {
   return withLockRetry(pool, work, () => conflict('REVIEW_BUSY', 'Concurrent changes are in progress. Retry the request.'));
 }
 
-function createReviewService(pool, repository, storage) {
+function createReviewService(pool, repository, storage, maxSize = 10485760) {
   async function schoolAccess(actor, mustBeActive) {
     if (actor.role === 'government') return;
     if (actor.role !== 'school_admin' || !actor.school_id) throw forbidden();
@@ -85,7 +85,7 @@ function createReviewService(pool, repository, storage) {
     async decide(actor, id, decision, body) {
       const note = reviewNote(body, decision);
       const initial = await visible(actor, id);
-      const hasFile = decision === 'approved' && initial.file_path ? await storage.exists(initial.file_path) : false;
+      const hasFile = decision === 'approved' && initial.file_path ? await storage.hasPublicPdf(initial.file_path, maxSize) : false;
 
       return decisionTransaction(pool, async db => {
         const resource = await repository.lockResource(db, initial.resource_id);
@@ -101,7 +101,7 @@ function createReviewService(pool, repository, storage) {
 
         let reason = 'REJECTED';
         if (decision === 'approved') {
-          const withheld = resource.publication_status === 'hidden' && Boolean(await repository.priorApproval(db, resource.id, id));
+          const withheld = resource.administrative_status !== 'normal';
           reason = evaluatePublicationEligibility(resource, version, { ...review, decision }, {
             hasFile: hasFile && initial.file_path === version.file_path, withheld
           });
@@ -128,7 +128,7 @@ function createReviewService(pool, repository, storage) {
     },
     withdraw(actor, id, body) {
       parseId(id);
-      withdrawalReason(body);
+      const reason = withdrawalReason(body);
       if (actor.role !== 'government') throw forbidden();
 
       return decisionTransaction(pool, async db => {
@@ -138,15 +138,36 @@ function createReviewService(pool, repository, storage) {
         if (resource.publication_status !== 'published' || !resource.published_version_id) {
           throw conflict('NOT_PUBLISHED', 'Resource is not published');
         }
-        // A retained approved review is the evidence used by the conservative hold policy.
-        if (!await repository.approvedPointer(db, id, resource.published_version_id)) {
-          throw conflict('PUBLISHED_POINTER_UNCONFIRMED', 'Cannot confirm historical approval for the published Version');
-        }
-        await repository.withdraw(db, id);
+        await repository.withdraw(db, id, actor.id, reason);
         return {
-          resource_id: id, publication_status: 'hidden', published_version_id: null,
-          withdrawn_version_id: resource.published_version_id, reason_recorded: false
+          resource_id: id, publication_status: 'hidden', published_version_id: resource.published_version_id,
+          administrative_status: 'withdrawn',
+          withdrawn_version_id: resource.published_version_id, reason_recorded: true
         };
+      });
+    },
+    async reinstate(actor, id, body) {
+      parseId(id);
+      if (actor.role !== 'government') throw forbidden();
+      requireFields(body, ['version_id']);
+      const versionId = parseId(body.version_id);
+      const candidate = await repository.candidate(id, versionId);
+      if (!candidate) throw notFound('Version');
+      const hasFile = candidate.file_path ? await storage.hasPublicPdf(candidate.file_path, maxSize) : false;
+
+      return decisionTransaction(pool, async db => {
+        const resource = await repository.lockResource(db, id);
+        if (!resource) throw notFound('Resource');
+        const current = await currentActor(db, actor);
+        if (resource.administrative_status === 'normal') throw conflict('NOT_WITHDRAWN', 'Resource is not on administrative hold');
+        const version = await repository.lockVersion(db, id, versionId);
+        const review = version && await repository.versionReview(db, versionId);
+        const failure = evaluatePublicationEligibility(resource, version, review, {
+          hasFile: hasFile && candidate.file_path === version?.file_path
+        });
+        if (failure) throw conflict(failure, 'Selected Version is not eligible for publication');
+        await repository.reinstate(db, id, versionId, current.id);
+        return { resource_id: id, published_version_id: versionId, publication_status: 'published', administrative_status: 'normal' };
       });
     }
   };

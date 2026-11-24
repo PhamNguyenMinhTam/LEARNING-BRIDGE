@@ -33,6 +33,9 @@ function createReviewController(service) {
     },
     async withdraw(req, res) {
       res.json(await service.withdraw(req.user, req.params.id, req.body));
+    },
+    async reinstate(req, res) {
+      res.json(await service.reinstate(req.user, req.params.id, req.body));
     }
   };
 }

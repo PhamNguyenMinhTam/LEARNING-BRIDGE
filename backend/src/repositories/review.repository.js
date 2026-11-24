@@ -78,11 +78,12 @@ function createReviewRepository(pool) {
       return one(db, `SELECT * FROM resource_reviews WHERE id = CAST(? AS UNSIGNED)
         AND version_id = CAST(? AS UNSIGNED) FOR UPDATE`, [reviewId, versionId]);
     },
-    priorApproval(db, id, reviewId) {
-      return one(db, `SELECT rv.id FROM resource_versions v STRAIGHT_JOIN resource_reviews rv
-        FORCE INDEX (uq_resource_reviews_version) ON rv.version_id = v.id
-        WHERE v.resource_id = CAST(? AS UNSIGNED) AND rv.decision = 'approved'
-        AND rv.id <> CAST(? AS UNSIGNED) LIMIT 1 FOR SHARE`, [id, reviewId]);
+    candidate(resourceId, versionId) {
+      return one(pool, `SELECT v.* FROM resource_versions v
+        WHERE v.resource_id = CAST(? AS UNSIGNED) AND v.id = CAST(? AS UNSIGNED)`, [resourceId, versionId]);
+    },
+    versionReview(db, versionId) {
+      return one(db, 'SELECT version_id, decision FROM resource_reviews WHERE version_id = CAST(? AS UNSIGNED) FOR SHARE', [versionId]);
     },
     approvedPointer(db, id, versionId) {
       return one(db, `SELECT v.version_number FROM resource_versions v JOIN resource_reviews rv ON rv.version_id = v.id
@@ -99,9 +100,15 @@ function createReviewRepository(pool) {
       await db.execute(`UPDATE resources SET publication_status = 'published', published_version_id = CAST(? AS UNSIGNED)
         WHERE id = CAST(? AS UNSIGNED)`, [versionId, resourceId]);
     },
-    async withdraw(db, resourceId) {
-      await db.execute(`UPDATE resources SET publication_status = 'hidden', published_version_id = NULL
-        WHERE id = CAST(? AS UNSIGNED)`, [resourceId]);
+    async withdraw(db, resourceId, actorId, reason) {
+      await db.execute(`UPDATE resources SET publication_status = 'hidden', administrative_status = 'withdrawn',
+        withdrawn_at = UTC_TIMESTAMP(), withdrawn_by = CAST(? AS UNSIGNED), withdrawal_reason = ?
+        WHERE id = CAST(? AS UNSIGNED)`, [actorId, reason, resourceId]);
+    },
+    async reinstate(db, resourceId, versionId, actorId) {
+      await db.execute(`UPDATE resources SET publication_status = 'published', administrative_status = 'normal',
+        published_version_id = CAST(? AS UNSIGNED), reinstated_at = UTC_TIMESTAMP(), reinstated_by = CAST(? AS UNSIGNED)
+        WHERE id = CAST(? AS UNSIGNED)`, [versionId, actorId, resourceId]);
     }
   };
 }

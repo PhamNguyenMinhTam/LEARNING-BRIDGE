@@ -4,7 +4,7 @@ Express phục vụ HTML, CSS, JavaScript và API cùng origin. Frontend giữ b
 
 ## Thiết lập cục bộ
 
-Yêu cầu Node.js 24 LTS, npm và MySQL 8.4. Dùng PowerShell trên Windows. Từ repo, chuẩn bị database dev theo hướng dẫn database. Dùng DBA để nạp `database/schema.sql` và `backend/migrations/001_auth_sessions.sql` vào schema trống. Seed SQL là tùy chọn cho demo. Tài khoản trong seed có hash placeholder. Tạo Government thật bằng bootstrap CLI với mật khẩu cục bộ riêng. Tài khoản Backend cần quyền theo README. [MySQL và schema](../database/README.md) · [Backend](../backend/README.md)
+Yêu cầu Node.js 24 LTS, npm và MySQL 8.4. Dùng PowerShell trên Windows. Từ repo, chuẩn bị database dev theo hướng dẫn database. Dùng DBA để nạp `database/schema.sql` và `backend/migrations/001_auth_sessions.sql` và `backend/migrations/002_resource_withdrawal.sql` vào schema trống. Seed SQL là tùy chọn cho demo. Tài khoản trong seed có hash placeholder. Tạo Government thật bằng bootstrap CLI với mật khẩu cục bộ riêng. Tài khoản Backend cần quyền theo README. [MySQL và schema](../database/README.md) · [Backend](../backend/README.md)
 
 ```powershell
 Set-Location backend
@@ -40,7 +40,7 @@ Frontend hiển thị loading, kết quả trống và lỗi tiếng Việt. API
 
 ## Kiểm thử
 
-Chạy `npm.cmd test` trong backend. Bộ MySQL chạy với `npm.cmd run test:db` theo hướng dẫn từng phase. Playwright cần Chrome cài sẵn hoặc đặt `E2E_BROWSER_CHANNEL=msedge`. Nạp schema và session migration vào schema loopback cô lập tên `learning_bridge_e2e_test` hoặc `learning_bridge_auth_test`. Dùng tài khoản test có quyền cho toàn bộ API và quyền ghi fixtures. Các test tạo tài khoản hư cấu và dữ liệu trong schema test. Chỉ định .env bằng biến môi trường trỏ về database test. Không chạy e2e với dữ liệu dùng chung hoặc production.
+Chạy `npm.cmd test` trong backend. Bộ MySQL chạy với `npm.cmd run test:db` theo hướng dẫn từng phase. Playwright cần Chrome cài sẵn hoặc đặt `E2E_BROWSER_CHANNEL=msedge`. Nạp schema và hai migration vào schema loopback cô lập tên `learning_bridge_e2e_test` hoặc `learning_bridge_auth_test`. Dùng tài khoản test có quyền cho toàn bộ API và quyền ghi fixtures. Các test tạo tài khoản hư cấu và dữ liệu trong schema test. Chỉ định .env bằng biến môi trường trỏ về database test. Không chạy e2e với dữ liệu dùng chung hoặc production.
 
 ```powershell
 $env:RUN_BROWSER_E2E = '1'
@@ -53,4 +53,4 @@ Playwright khởi động Express riêng ở cổng 3107 mặc định, dùng `E
 
 ## Giới hạn
 
-Withdrawal giữ lịch sử nhưng schema chưa có trường riêng để lưu lý do hoặc phân biệt mọi Resource đã rút. Resource hidden có approval cũ không tự xuất bản lại. PDF dùng kiểm tra cấu trúc cơ bản và kho riêng. Hiển thị inline phụ thuộc browser và CSP. Student chưa có tài khoản, Government chưa lưu nhật ký withdrawal bền vững và mật khẩu School Admin mới được chuyển qua kênh bảo mật ngoài ứng dụng.
+Withdrawal giữ con trỏ cũ, lý do gần nhất và trạng thái trong DB từ Phase 3.2. Bản ghi legacy không rõ nguồn gốc tiếp tục giữ ẩn. PDF dùng kiểm tra cấu trúc cơ bản và kho riêng. Hiển thị inline phụ thuộc browser và CSP. Student chưa có tài khoản, Government chưa lưu nhật ký withdrawal bền vững và mật khẩu School Admin mới được chuyển qua kênh bảo mật ngoài ứng dụng.
