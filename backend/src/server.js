@@ -1,3 +1,8 @@
+const { createTeacherSchoolRepository } = require('./repositories/teacher-school.repository');
+const { createResourceRepository } = require('./repositories/resource.repository');
+const { createTeacherSchoolService } = require('./services/teacher-school.service');
+const { createResourceService } = require('./services/resource.service');
+const { createFileStorage } = require('./services/file-storage');
 const { createApp } = require('./app');
 const { loadConfig } = require('./config/env');
 const { createDatabasePool } = require('./config/database');
@@ -20,10 +25,19 @@ function start() {
 
   const pool = createDatabasePool(config.database);
   const store = new MySqlSessionStore(pool);
+  const resourceRepository = createResourceRepository(pool);
+  const associationRepository = createTeacherSchoolRepository(pool);
+  const schools = createTeacherSchoolService(pool, associationRepository, resourceRepository);
+  const storage = createFileStorage(config.upload.directory);
   const app = createApp({
     ...config,
     checkDatabase: createDatabaseCheck(pool),
     government: createGovernmentService(createGovernmentRepository(pool)),
+    teacher: {
+      schools,
+      resources: createResourceService(pool, resourceRepository, schools, associationRepository, storage),
+      maxSize: config.upload.maxSize
+    },
     auth: { ...config.session, store, auth: createAuthService(createUserRepository(pool)) }
   });
   const cleanup = setInterval(() => {

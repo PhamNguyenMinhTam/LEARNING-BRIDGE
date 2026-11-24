@@ -31,7 +31,8 @@ function createAuthController(auth, clearCookie) {
       res.status(204).end();
     },
     me(req, res) {
-      res.json(req.user);
+      const { created_at, ...profile } = req.user;
+      res.json(profile);
     }
   };
 }

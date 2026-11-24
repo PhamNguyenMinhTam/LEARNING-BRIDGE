@@ -26,7 +26,7 @@ function createUserRepository(pool) {
       return user;
     },
     async findById(id) {
-      const [user] = await query(`SELECT ${profile} FROM users WHERE id = CAST(? AS UNSIGNED)`, [id]);
+      const [user] = await query(`SELECT ${profile}, created_at FROM users WHERE id = CAST(? AS UNSIGNED)`, [id]);
       return user;
     },
     async create({ full_name, email, password_hash }, role) {

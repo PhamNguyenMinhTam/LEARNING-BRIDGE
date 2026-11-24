@@ -1,3 +1,4 @@
+const { one, withTransaction } = require('./mysql');
 const { ApiError } = require('../utils/api-error');
 
 const schoolColumns = 'id, school_code, school_name, teacher_id_pattern, status, created_at';
@@ -10,11 +11,6 @@ const schoolUpdates = {
   status: 'UPDATE schools SET status = ? WHERE ' + schoolId
 };
 
-async function one(db, sql, values) {
-  const [[row]] = await db.execute(sql, values);
-  return row;
-}
-
 async function insert(db, sql, values, duplicateCode, duplicateMessage) {
   try {
     const [result] = await db.execute(sql, values);
@@ -26,25 +22,6 @@ async function insert(db, sql, values, duplicateCode, duplicateMessage) {
 }
 
 function createGovernmentRepository(pool) {
-  async function transaction(work) {
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const result = await work(connection);
-      await connection.commit();
-      return result;
-    } catch (error) {
-      try {
-        await connection.rollback();
-      } catch {
-        connection.destroy();
-      }
-      throw error;
-    } finally {
-      connection.release();
-    }
-  }
-
   const selectSchool = 'SELECT ' + schoolColumns + ' FROM schools WHERE ' + schoolId;
   const selectAdmin = 'SELECT ' + adminColumns + ' FROM users WHERE ' + adminId;
   async function page(db, from, fields, values, { limit, offset }) {
@@ -68,13 +45,13 @@ function createGovernmentRepository(pool) {
         values.push(pattern, pattern);
       }
       const from = 'FROM schools' + (clauses.length ? ' WHERE ' + clauses.join(' AND ') : '');
-      return transaction(db => page(db, from, 'id, school_code, school_name, status', values, options));
+      return withTransaction(pool, db => page(db, from, 'id, school_code, school_name, status', values, options));
     },
     findSchool(id) {
       return one(pool, selectSchool, [id]);
     },
     createSchool({ school_code, school_name, teacher_id_pattern, status }) {
-      return transaction(async db => {
+      return withTransaction(pool, async db => {
         const id = await insert(db,
           'INSERT INTO schools (school_code, school_name, teacher_id_pattern, status) VALUES (?, ?, ?, ?)',
           [school_code, school_name, teacher_id_pattern, status], 'SCHOOL_CODE_IN_USE', 'School code already registered');
@@ -82,20 +59,20 @@ function createGovernmentRepository(pool) {
       });
     },
     updateSchool(id, key, value) {
-      return transaction(async db => {
+      return withTransaction(pool, async db => {
         await db.execute(schoolUpdates[key], [value, id]);
         return one(db, selectSchool, [id]);
       });
     },
     listAdmins(id, options) {
-      return transaction(async db => {
+      return withTransaction(pool, async db => {
         if (!await one(db, selectSchool, [id])) return null;
         return page(db, "FROM users WHERE role = 'school_admin' AND school_id = CAST(? AS UNSIGNED)",
           adminColumns, [id], options);
       });
     },
     provisionAdmin(id, fields) {
-      return transaction(async db => {
+      return withTransaction(pool, async db => {
         // Keep the School active from the status check through account creation.
         const school = await one(db, selectSchool + ' FOR UPDATE', [id]);
         if (!school) return null;
@@ -108,7 +85,7 @@ function createGovernmentRepository(pool) {
       });
     },
     updateAdminStatus(id, status) {
-      return transaction(async db => {
+      return withTransaction(pool, async db => {
         await db.execute('UPDATE users SET status = ? WHERE ' + adminId, [status, id]);
         return one(db, selectAdmin, [id]);
       });

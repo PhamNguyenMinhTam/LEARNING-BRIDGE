@@ -64,8 +64,13 @@ function loadConfig() {
     'AUTH_ORIGINS', production);
   if (origins.length === 0) throw new Error('Set AUTH_ORIGINS to the trusted application origins');
 
+  const maxSize = Number(env.TEACHER_PDF_MAX_BYTES ?? 10485760);
+  if (!Number.isSafeInteger(maxSize) || maxSize < 1 || maxSize > 26214400) {
+    throw new Error('Invalid TEACHER_PDF_MAX_BYTES');
+  }
   return {
     nodeEnv,
+    upload: { directory: path.resolve(__dirname, '../../private-uploads'), maxSize },
     host,
     port: httpPort,
     trustProxy: proxy === 'loopback' ? 'loopback' : false,

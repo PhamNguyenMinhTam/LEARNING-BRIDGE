@@ -24,7 +24,7 @@ function createAuthService(users) {
     },
     async activeProfile(id) {
       const user = await users.findById(id);
-      return user?.status === 'active' ? publicProfile(user) : null;
+      return user?.status === 'active' ? { ...publicProfile(user), created_at: user.created_at } : null;
     }
   };
 }

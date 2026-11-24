@@ -1,6 +1,6 @@
 # Learning Bridge — Backend
 
-Backend gồm nền tảng Express/MySQL của Phase 2.1, xác thực và phân quyền của Phase 2.2, cùng Government Management APIs của Phase 2.3. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
+Backend gồm nền tảng Express/MySQL của Phase 2.1, xác thực và phân quyền của Phase 2.2, Government Management APIs của Phase 2.3 và Teacher APIs của Phase 2.4. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
 
 ## Cài đặt trên Windows PowerShell
 
@@ -71,7 +71,7 @@ Dùng `npm.cmd start` để chạy không theo dõi thay đổi tệp. Dừng b�
 | --- | --- |
 | 2.2 Authentication & Authorization | Đã triển khai đăng ký, đăng nhập, session, RBAC và middleware phạm vi trường |
 | 2.3 Government | Đã triển khai quản lý trường, pattern mã giáo viên và tài khoản quản trị trường. Duyệt đóng góp độc lập thuộc giai đoạn sau. |
-| 2.4 Teacher | Khai báo liên kết với nhiều trường, tạo tài nguyên và bản nháp, metadata tệp và gửi duyệt |
+| 2.4 Teacher | Đã triển khai liên kết trường, Resource, Draft Version, PDF riêng tư và gửi duyệt |
 | 2.5 School | Hàng chờ duyệt, duyệt hoặc từ chối kèm lý do, dùng transaction để bảo toàn trạng thái |
 | 2.6 Student | Tìm kiếm và lọc công khai, đọc phiên bản đã xuất bản, truy cập tệp an toàn và dùng liên kết chính thức |
 
@@ -180,3 +180,9 @@ Backend chưa có xác minh email, đặt lại mật khẩu hoặc MFA. Governm
 Government dùng session đang có để tạo trường, tìm kiếm có phân trang, đổi tên, cập nhật trạng thái và cấu hình Teacher ID Pattern. Government cũng cấp, xem và đổi trạng thái School Administrator. Các thao tác thay đổi yêu cầu `Origin` thuộc `AUTH_ORIGINS`. API trả ID dạng chuỗi và dùng schema hiện tại.
 
 Ngoài quyền Phase 2.2, tài khoản ứng dụng cần `INSERT` và `UPDATE (school_name, teacher_id_pattern, status)` trên `schools`, cùng `UPDATE (status)` trên `users`. Quyền `SELECT` trên `schools` và `users` được dùng để đọc chi tiết và kiểm tra phạm vi. Sáu bảng nghiệp vụ và migration session hiện có vẫn dùng nguyên trạng. [Government API và ví dụ PowerShell](docs/GOVERNMENT_API.md)
+
+## Phase 2.4 — Teacher Management
+
+Teacher dùng session hiện có để khai báo nhiều trường, tạo Resource độc lập hoặc theo trường, sửa Draft Version, upload PDF riêng tư, gửi duyệt và đọc Review History. Server giữ bản đã xuất bản khi có nội dung mới. Cấu hình `TEACHER_PDF_MAX_BYTES` theo `.env.example`. Sao lưu riêng thư mục `backend/private-uploads/` và giữ ngoài mọi static root.
+
+Phase này giữ nguyên sáu bảng nghiệp vụ và migration session. Ngoài quyền Phase 2.3, tài khoản ứng dụng cần `SELECT, INSERT` trên `teacher_schools`, `resources`, `resource_versions` và `resource_reviews`. Cấp `UPDATE (teacher_code, status, pattern_checked_at)` trên `teacher_schools` và quyền cập nhật các cột metadata, `file_path`, `edit_state` trên `resource_versions`. MySQL cần thêm một quyền UPDATE cho locking read `FOR UPDATE` trên `resources`, ví dụ `UPDATE (created_at)`. Phase này không cần quyền ghi quyết định review hay cột xuất bản. [Teacher API và hướng dẫn kiểm thử](docs/TEACHER_API.md)
