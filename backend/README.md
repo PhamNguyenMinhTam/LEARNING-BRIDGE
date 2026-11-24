@@ -1,6 +1,6 @@
 # Learning Bridge — Backend
 
-Backend gồm nền tảng Express/MySQL của Phase 2.1 và xác thực, session, phân quyền của Phase 2.2. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
+Backend gồm nền tảng Express/MySQL của Phase 2.1, xác thực và phân quyền của Phase 2.2, cùng Government Management APIs của Phase 2.3. Backend dùng JavaScript CommonJS, Node.js 24 LTS, Express, mysql2/promise, dotenv và cors. Bộ kiểm thử dùng `node:test`. [Lịch phát hành Node.js](https://nodejs.org/en/about/previous-releases)
 
 ## Cài đặt trên Windows PowerShell
 
@@ -70,7 +70,7 @@ Dùng `npm.cmd start` để chạy không theo dõi thay đổi tệp. Dừng b�
 | Giai đoạn | Phạm vi dự kiến |
 | --- | --- |
 | 2.2 Authentication & Authorization | Đã triển khai đăng ký, đăng nhập, session, RBAC và middleware phạm vi trường |
-| 2.3 Government | Quản lý trường và pattern mã giáo viên, tài khoản quản trị trường, duyệt đóng góp độc lập |
+| 2.3 Government | Đã triển khai quản lý trường, pattern mã giáo viên và tài khoản quản trị trường. Duyệt đóng góp độc lập thuộc giai đoạn sau. |
 | 2.4 Teacher | Khai báo liên kết với nhiều trường, tạo tài nguyên và bản nháp, metadata tệp và gửi duyệt |
 | 2.5 School | Hàng chờ duyệt, duyệt hoặc từ chối kèm lý do, dùng transaction để bảo toàn trạng thái |
 | 2.6 Student | Tìm kiếm và lọc công khai, đọc phiên bản đã xuất bản, truy cập tệp an toàn và dùng liên kết chính thức |
@@ -101,7 +101,7 @@ notepad .env
 
 - `SESSION_SECRET` là 32 byte ngẫu nhiên mã hóa base64url. Dùng cùng giá trị trên các instance phục vụ cùng ứng dụng. Thay secret sẽ làm cookie hiện có mất hiệu lực.
 - `SESSION_COOKIE_NAME` mặc định `learning_bridge.sid`. `SESSION_MAX_AGE_MS` mặc định 30 phút không hoạt động, chấp nhận từ 1 phút đến 8 giờ. Request có session hợp lệ gia hạn thời gian này.
-- `AUTH_ORIGINS` là danh sách origin chính xác, phân cách bằng dấu phẩy. Cấu hình cả origin của ứng dụng khi cùng origin và origin cụ thể của frontend khi chạy riêng. Giá trị production phải dùng HTTPS. `CORS_ORIGINS` áp dụng cho API ngoài auth và không bật credentials.
+- `AUTH_ORIGINS` là danh sách origin chính xác, phân cách bằng dấu phẩy. Cấu hình cả origin của ứng dụng khi cùng origin và origin cụ thể của frontend khi chạy riêng. Giá trị production phải dùng HTTPS. `CORS_ORIGINS` dùng cho API ngoài các router session như health và không bật credentials.
 - `TRUST_PROXY=off` mặc định. Chỉ đặt `TRUST_PROXY=loopback` khi reverse proxy HTTPS kết nối từ loopback, ghi đè `X-Forwarded-Proto` và `X-Forwarded-For`, và cổng Node chỉ cho proxy truy cập. Production từ chối auth qua HTTP.
 
 Chạy migration thủ công một lần bằng tài khoản triển khai MySQL có quyền DDL. Ví dụ dưới đây chạy từ thư mục gốc repo, thay tên schema và tài khoản theo môi trường.
@@ -173,4 +173,10 @@ try {
 }
 ```
 
-Phase 2.2 chưa có xác minh email, đặt lại mật khẩu, MFA hoặc cấp School Admin qua API. Giai đoạn 2.3 triển khai Government APIs để quản lý trường và cấp School Admin theo quyền đã xác thực.
+Backend chưa có xác minh email, đặt lại mật khẩu hoặc MFA. Government có thể cấp School Admin qua API Phase 2.3.
+
+## Phase 2.3 — Government Management
+
+Government dùng session đang có để tạo trường, tìm kiếm có phân trang, đổi tên, cập nhật trạng thái và cấu hình Teacher ID Pattern. Government cũng cấp, xem và đổi trạng thái School Administrator. Các thao tác thay đổi yêu cầu `Origin` thuộc `AUTH_ORIGINS`. API trả ID dạng chuỗi và dùng schema hiện tại.
+
+Ngoài quyền Phase 2.2, tài khoản ứng dụng cần `INSERT` và `UPDATE (school_name, teacher_id_pattern, status)` trên `schools`, cùng `UPDATE (status)` trên `users`. Quyền `SELECT` trên `schools` và `users` được dùng để đọc chi tiết và kiểm tra phạm vi. Sáu bảng nghiệp vụ và migration session hiện có vẫn dùng nguyên trạng. [Government API và ví dụ PowerShell](docs/GOVERNMENT_API.md)

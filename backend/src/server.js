@@ -3,6 +3,8 @@ const { loadConfig } = require('./config/env');
 const { createDatabasePool } = require('./config/database');
 const { createDatabaseCheck } = require('./repositories/health.repository');
 const { createUserRepository } = require('./repositories/user.repository');
+const { createGovernmentRepository } = require('./repositories/government.repository');
+const { createGovernmentService } = require('./services/government.service');
 const { createAuthService } = require('./services/auth.service');
 const { MySqlSessionStore } = require('./repositories/session.store');
 
@@ -21,6 +23,7 @@ function start() {
   const app = createApp({
     ...config,
     checkDatabase: createDatabaseCheck(pool),
+    government: createGovernmentService(createGovernmentRepository(pool)),
     auth: { ...config.session, store, auth: createAuthService(createUserRepository(pool)) }
   });
   const cleanup = setInterval(() => {
